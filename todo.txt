@@ -1,0 +1,27 @@
+/// SEPARATION INTERFACE/IMPLEMENTATION
+---------------------------------------
+
+Toutes les fonctionnalités du programme (accessibles par l'interface graphiques), pourront etre utilisées sans la creation de fenetre (depuis des fonctions)
+
+On commente le code
+
+/// REPARTITION DU TRAVAIL
+--------------------------
+
+Chaque partie doit avoir un fonctionnement hermetique c'est a dire ne pas dépendre de comment fonctionne les autres parties.
+
+++ interface graphiques
+ - design
+ - parametrage
+ - bind aux fonctionnalités
+
+++ systeme client/serveur de base
+ - gestion des comptes
+ - gestion des connexions
+ - listes d'utilisateurs
+ - commandes
+
+++ systeme audio (ajouté au serveur)
+ - sockets
+ - selection du son
+ - parametrage de la transmission (debit, volume, ...)

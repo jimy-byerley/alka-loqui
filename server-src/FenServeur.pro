@@ -18,4 +18,3 @@ SOURCES += main.cpp\
 
 HEADERS  += fenserv.h
 
-FORMS    += fenserv.ui
