@@ -1,9 +1,10 @@
+
+
 #include "commande.h"
 #include "Client.h"
 #include "fenserv.h"
 
-
-Commande::Commande(const QString &text, int n)
+execCommand(const QString &text)
 {
     if(text[0]=='/')
     {
@@ -57,13 +58,14 @@ Commande::Commande(const QString &text, int n)
 }
 
 
-void Commande::kick(QString user)
+void kick(QString user)
 {
     nUser=FenServ.list(user);
     FenServ.sentAll(tr("<strong>"+user+"a était kick</strong>"));
     FenServ.remove(nUser);
 }
-void ban(QString user);
+
+void ban(QString user)
 {
 
 }
