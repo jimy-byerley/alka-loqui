@@ -1,0 +1,25 @@
+compilation : les includes sont detectés automatiquement dans le systeme
+
+link : ajouter les options suivantes a gcc
+-lpj -lpjsip
+
+si il en faut plus :
+  g7221codec
+  gsmcodec
+  ilbccodec
+  milenage
+  pj
+  pjlib-util
+  pjmedia
+  pjmedia-codec
+  pjmedia-audiodev
+  pjmedia-videodev
+  pjnath
+  pjsip
+  pjsip-simple
+  pjsip-ua
+  pjsua
+  portaudio
+  resample
+  speex
+  srtp
