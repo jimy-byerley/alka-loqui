@@ -1,9 +1,15 @@
 compilation : les includes sont detectés automatiquement dans le systeme
 
+//// PJSIP/PJSUA ////
+
+la bibliotheque PJSUA s'appuie sur la bibliotheque PJSIP, en la simplifiant
+elle est disponible sur les dépots Debian
+# apt-get install libpjsua2 libpjproject-dev
+
 link : ajouter les options suivantes a gcc
 -lpj -lpjsip -lpjsua
 
-si il en faut plus :
+si il en faut plus, on peut prendre parmis :
   g7221codec
   gsmcodec
   ilbccodec
@@ -23,3 +29,10 @@ si il en faut plus :
   resample
   speex
   srtp
+
+//// PORTAUDIO ////
+
+La bibliotheque permettant d'acceder aux periphériques audio (enregistrement et diffusion) de manière indépendant de la platforme. Elle est disponible sur les dépots Debian (utiliser la version 1.9)
+# apt-get install portaudio19-dev
+
+compilation: ajouter l'option '-lportaudio' a gcc
