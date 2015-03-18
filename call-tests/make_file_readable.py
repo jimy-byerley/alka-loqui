@@ -14,9 +14,10 @@ f.close()
 l = []
 for line in lines:
 	i = 0
-	if line[i] in list('0123456789'):
+	while line[i] in list('0123456789'):
 		i += 1
-	l.append(line[i+1:])
+	if line[i] == ' ': i+= 1
+	l.append(line[i:])
 
 f = open(filename, 'w')
 f.seek(0)
