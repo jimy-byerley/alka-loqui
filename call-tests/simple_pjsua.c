@@ -1,3 +1,8 @@
+/*
+ to compile, just use   
+ $ gcc simple_pjsua -o simple -lpj -lpjsip -lpjsua
+*/
+
 #include <pjsua-lib/pjsua.h>
 
 #define THIS_FILE "APP"
