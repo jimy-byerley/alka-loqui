@@ -1,10 +1,10 @@
 
 
 #include "commande.h"
-#include "Client.h"
+#include "client.h"
 #include "fenserv.h"
 
-execCommand(const QString &text)
+bool execCommand(const QString &text, Host user,QTcpSocket *socket)
 {
     if(text[0]=='/')
     {
@@ -13,7 +13,7 @@ execCommand(const QString &text)
             text=text.substr(1,text.size()-1);
             QString commande;
             int i=0;
-            while(!(text[i]==' ') and i <(text.size()-1))
+            while(text[i]!=' ' and i <(text.size()-1))
             {
                 commande += text[i];
                 i++;
@@ -23,49 +23,96 @@ execCommand(const QString &text)
                 text=text.substr(i+1,text.size()-1);
             }
          }
+        Host nUser=Pseudo2Host(text);
         switch(commande)
         {
-            case "kick":
-                kick(text);
-                break;
-            case "ban":
-                ban(text);
-                break;
-            case "up"
-                //a voir avec le lvl client
-                break;
-            case "down"
-                //idem
+
+              case "kick":
+                  if(pseudoExistant(nUser)||permition(user.lvl))
+                     kick(nUser);
+                  break;
+              case "ban":
+                  if(pseudoExistant(nUser)||permition(user.lvl))
+                     ban(nUser);
+                  break;
+              case "up":
+                  if(pseudoExistant(nUser) || nUser.lvl<3 ||permition(user.lvl))
+                    nUser.lvl+=1;
+                  break;
+             case "down":
+                  if(pseudoExistant(nUser) || nUser.lvl>1 ||permition(user.lvl))
+                     nUser.lvl-=1;
+                  break;
+
+             case "pseudo":
+                if(user.lvl!=-1 || nUser.lvl==-1)
+                    user.pseudo=text;
+                else
+                    newClient(text,1,user.socket);
+                if(nUser.lvl!=-1)
+                {
+                    QByteArray paquet;
+                    QDataStream out(&paquet, QIODevice::WriteOnly);
+
+                    out << (quint16) 0;
+                    out << tr("Pseudo indisponible");
+                    out.device()->seek(0);
+                    out << (quint16) (paquet.size() - sizeof(quint16));
+
+                    socket->write(paquet);
+                }
                 break;
             default:
                 QByteArray paquet;
                 QDataStream out(&paquet, QIODevice::WriteOnly);
 
                 out << (quint16) 0;
-                out << "Erreur commande inconnue";
+                out << tr("Erreur commande inconnue");
                 out.device()->seek(0);
                 out << (quint16) (paquet.size() - sizeof(quint16));
 
-                guests[n]->write(paquet);
+                socket->write(paquet);
                 break;
         }
+        return false;
      }
     else
     {
-        FenServ.sentAll(text);
+        return true;
     }
 
 }
 
-
-void kick(QString user)
+bool pseudoExistant(Host user)
 {
-    nUser=FenServ.list(user);
-    FenServ.sentAll(tr("<strong>"+user+"a était kick</strong>"));
-    FenServ.remove(nUser);
+    if(user.lvl!=-1)
+        return true;
+    else
+        QByteArray paquet;
+        QDataStream out(&paquet, QIODevice::WriteOnly);
+
+        out << (quint16) 0;
+        out << tr("Pseudo inconnus");
+        out.device()->seek(0);
+        out << (quint16) (paquet.size() - sizeof(quint16));
+
+        socket->write(paquet);
+        return false;
 }
 
-void ban(QString user)
+bool permition(char i)
+{
+
+}
+
+void kick(Host user)
+{
+    FenServ.sentAll(tr("<strong>"+user.pseudo+"a était kick</strong>"));
+    if(user!=host[0])
+        host.removeOne(user);
+}
+
+void ban(Host user)
 {
 
 }

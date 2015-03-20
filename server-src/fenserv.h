@@ -3,6 +3,7 @@
 
 #include <QtWidgets>
 #include <QtNetwork>
+#include "client.h"
 
 class FenServ : public QWidget
 {
@@ -18,12 +19,13 @@ private slots:
     void discGuest();
 
 private:
+
     QLabel *servStat;
     QPushButton *quitBu;
-
     QTcpServer *server;
     QList<QTcpSocket *> guests;
     quint16 tailleMessage;
+
 };
 
 #endif // FENSERV_H
