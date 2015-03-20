@@ -1,6 +1,7 @@
 compilation : les includes sont detectés automatiquement dans le systeme
 
 //// PJSIP/PJSUA ////
+---------------------
 
 la bibliotheque PJSUA s'appuie sur la bibliotheque PJSIP, en la simplifiant
 elle est disponible sur les dépots Debian
@@ -31,8 +32,17 @@ si il en faut plus, on peut prendre parmis :
   srtp
 
 //// PORTAUDIO ////
+-------------------
 
-La bibliotheque permettant d'acceder aux periphériques audio (enregistrement et diffusion) de manière indépendant de la platforme. Elle est disponible sur les dépots Debian (utiliser la version 1.9)
+La bibliotheque permettant d'acceder aux periphériques audio (enregistrement et diffusion) de manière indépendant de la platforme. Elle est disponible sur les dépots Debian (utiliser la version 19)
 # apt-get install portaudio19-dev
 
 compilation: ajouter l'option '-lportaudio' a gcc
+si on utilise l'installations parallele du repertoire 'portaudio', ajouter
+-Iportaudio-linux/usr/include -Lportaudio-linux/usr/lib/x86_64-linux-gnu -lm -lportaudio
+
+
+//// ERREURS ////
+-----------------
+
+En cas d'erreur de compilation du type 'libtartanpion.so: DSO is missing', on ajoute l'option '-ltartanpion'
