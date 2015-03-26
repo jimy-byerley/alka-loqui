@@ -3,7 +3,7 @@
 
 #include <QtWidgets>
 #include <QtNetwork>
-#include "client.h"
+#include "mainserveur.h"
 
 class FenServ : public QWidget
 {
@@ -11,21 +11,12 @@ class FenServ : public QWidget
 
 public:
     FenServ();
-    void sentAll(const QString &text);
-
-private slots:
-    void newCon();
-    void dataRec();
-    void discGuest();
+    void setServStat(QString a);
 
 private:
 
     QLabel *servStat;
     QPushButton *quitBu;
-    QTcpServer *server;
-    QList<QTcpSocket *> guests;
-    quint16 tailleMessage;
-
 };
 
 #endif // FENSERV_H

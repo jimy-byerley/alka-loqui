@@ -1,7 +1,14 @@
 #include "client.h"
 
+bool operator==(Host const& a, Host const& b)
+{
+    if (a.lvl == b.lvl && a.pseudo == b.pseudo && a.socket == b.socket)
+        return true;
+    else
+        return false;
+}
 
-void newClient(QString pseudo,const char lvl,QTcpSocket newGuest)
+void newClient(QString pseudo, const char lvl, QTcpSocket *newGuest)
 {
     Host nClient;
     nClient.lvl=lvl;
@@ -12,7 +19,7 @@ void newClient(QString pseudo,const char lvl,QTcpSocket newGuest)
 Host Pseudo2Host(QString pseudo)
 {
     int i=0;
-    while(host[i].pseudo!=pseudo || i<host.size())
+    while(host[i].pseudo!=pseudo && i<host.size())
     {
         i++;
     }
@@ -24,7 +31,7 @@ Host Pseudo2Host(QString pseudo)
 Host Socket2Client(QTcpSocket *socket)
 {
     int i=0;
-    while(host[i].socket!=socket || i<host.size())
+    while(host[i].socket!=socket && i<host.size())
     {
         i++;
     }

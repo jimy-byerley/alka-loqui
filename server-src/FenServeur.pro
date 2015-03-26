@@ -16,13 +16,13 @@ INCLUDEPATH += .
 SOURCES += main.cpp\
         fenServ.cpp\
         commande.cpp \
-    client.cpp \
+         client.cpp \
     mainserveur.cpp
 
 
 HEADERS  += fenserv.h\
          commande.h \
-    client.h \
+        client.h \
     mainserveur.h
 
 

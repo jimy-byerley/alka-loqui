@@ -90,7 +90,7 @@ void FenGuest::on_boutCo_clicked()
 
 void FenGuest::on_boutSent_clicked()
 {
-    QString textYHTS = tr("b") + pseudo->text() + tr("</b> : ") + textSe->text();
+    QString textYHTS = textSe->text();
     sentMessage(textYHTS);                                                                  //modif
 }
 void FenGuest::sentMessage(QString textYHTS)
