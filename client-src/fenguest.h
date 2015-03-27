@@ -16,7 +16,7 @@ private slots:
     void guestCo();
     void guestDisc();
     void erreurSocket(QAbstractSocket::SocketError erreur);
-
+    void sentMessage(QString textYHTS);
     void on_boutCo_clicked();
 
     void on_boutSent_clicked();

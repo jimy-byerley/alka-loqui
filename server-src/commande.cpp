@@ -1,71 +1,86 @@
-
-
 #include "commande.h"
-#include "Client.h"
-#include "fenserv.h"
 
-execCommand(const QString &text)
+
+bool execCommand(QString text, Host user, QTcpSocket *socket, QList<Host> cGuest)
 {
-    if(text[0]=='/')
+    if(text.data()[0]=='/')
     {
-        if(!(text.size==1))
+        QString commande;
+        if(text.size()!=1)
         {
-            text=text.substr(1,text.size()-1);
-            QString commande;
+            text=text.right(2);
             int i=0;
-            while(!(text[i]==' ') and i <(text.size()-1))
+            while(text.data()[i]!=' ' and i <(text.size()-1))
             {
-                commande += text[i];
+                commande += text.data()[i];
                 i++;
             }
             if(i<text.size())
             {
-                text=text.substr(i+1,text.size()-1);
+                text=text.right(i+1);
             }
          }
-        switch(commande)
-        {
-            case "kick":
-                kick(text);
-                break;
-            case "ban":
-                ban(text);
-                break;
-            case "up"
-                //a voir avec le lvl client
-                break;
-            case "down"
-                //idem
-                break;
-            default:
-                QByteArray paquet;
-                QDataStream out(&paquet, QIODevice::WriteOnly);
+        Host nUser=Pseudo2Host(text,cGuest);
 
-                out << (quint16) 0;
-                out << "Erreur commande inconnue";
-                out.device()->seek(0);
-                out << (quint16) (paquet.size() - sizeof(quint16));
-
-                guests[n]->write(paquet);
-                break;
+              if( commande=="kick"&& pseudoExistant(nUser,user)&&permition(user.lvl))
+                kick(nUser,cGuest);
+              else if(commande=="ban"&& pseudoExistant(nUser,user)&&permition(user.lvl))
+                ban(nUser);
+              else if(commande=="up" && pseudoExistant(nUser,user) && nUser.lvl<3 &&permition(user.lvl))
+                nUser.lvl+=1;
+              else if(commande=="down" &&pseudoExistant(nUser,user) && nUser.lvl>1 &&permition(user.lvl))
+                nUser.lvl-=1;
+              else if(commande=="pseudo")
+               {
+                  if(nUser.lvl==-1)
+                  {
+                     if(user.lvl!=-1)
+                        user.pseudo=text;
+                     else
+                        sentAll(newClient(text,1,socket,&cGuest),cGuest);
+                  }
+                  else
+                  {
+                      sentOne("Pseudo indisponible",user);
+                  }
+               }
+              else
+              {
+                sentOne("Erreur commande inconnus",user);
+              }
+        return false;
         }
+        return true;
      }
+
+
+bool pseudoExistant(Host user,Host requet)
+{
+    if(user.lvl!=-1)
+        return true;
     else
     {
-        FenServ.sentAll(text);
+        sentOne("Pseudo inconnus",requet);
+        return false;
     }
-
 }
 
-
-void kick(QString user)
+bool permition(char i)
 {
-    nUser=FenServ.list(user);
-    FenServ.sentAll(tr("<strong>"+user+"a était kick</strong>"));
-    FenServ.remove(nUser);
+    if(i>1)
+        return true;
+    else
+        return false;
 }
 
-void ban(QString user)
+void kick(Host user,QList<Host> cGuest)
 {
+    sentAll("<strong>"+user.pseudo+"a était kick</strong>",cGuest);
+    if(user.lvl!=-1)
+        cGuest.removeOne(user);
+}
 
+void ban(Host user)
+{
+    user.lvl;
 }

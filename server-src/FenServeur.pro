@@ -14,7 +14,14 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 SOURCES += main.cpp\
-        fenServ.cpp
+        fenServ.cpp\
+        commande.cpp \
+         client.cpp \
+    mainserveur.cpp
 
-HEADERS  += fenserv.h
+HEADERS  += fenserv.h\
+         commande.h \
+        client.h \
+    mainserveur.h
+
 

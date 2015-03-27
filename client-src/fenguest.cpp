@@ -49,6 +49,7 @@ void FenGuest::dataRec()
 
 void FenGuest::guestCo()
 {
+    sentMessage(tr("/pseudo ")+pseudo->text());                                                         //modif
     listeMessages->append(tr("<i>Connexion réussie : <br/> Bienvenue chez Alka-Loqui !</i>"));
     boutCo->setEnabled(true);
 }
@@ -89,10 +90,13 @@ void FenGuest::on_boutCo_clicked()
 
 void FenGuest::on_boutSent_clicked()
 {
+    QString textYHTS = textSe->text();
+    sentMessage(textYHTS);                                                                  //modif
+}
+void FenGuest::sentMessage(QString textYHTS)
+{
     QByteArray paquet;
-    QDataStream out(&paquet, QIODevice::WriteOnly);
-
-    QString textYHTS = tr("b") + pseudo->text() + tr("</b> : ") + textSe->text();
+    QDataStream out(&paquet, QIODevice::WriteOnly);                                          //modif
 
     out << (quint16) 0;
     out << textYHTS;
