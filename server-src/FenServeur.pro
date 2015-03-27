@@ -19,7 +19,6 @@ SOURCES += main.cpp\
          client.cpp \
     mainserveur.cpp
 
-
 HEADERS  += fenserv.h\
          commande.h \
         client.h \

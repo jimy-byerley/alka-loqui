@@ -1,7 +1,7 @@
 #include "commande.h"
 
 
-bool execCommand(QString text, Host user)
+bool execCommand(QString text, Host user, QTcpSocket *socket, QList<Host> cGuest)
 {
     if(text.data()[0]=='/')
     {
@@ -20,10 +20,10 @@ bool execCommand(QString text, Host user)
                 text=text.right(i+1);
             }
          }
-        Host nUser=Pseudo2Host(text);
+        Host nUser=Pseudo2Host(text,cGuest);
 
               if( commande=="kick"&& pseudoExistant(nUser,user)&&permition(user.lvl))
-                kick(nUser);
+                kick(nUser,cGuest);
               else if(commande=="ban"&& pseudoExistant(nUser,user)&&permition(user.lvl))
                 ban(nUser);
               else if(commande=="up" && pseudoExistant(nUser,user) && nUser.lvl<3 &&permition(user.lvl))
@@ -37,7 +37,7 @@ bool execCommand(QString text, Host user)
                      if(user.lvl!=-1)
                         user.pseudo=text;
                      else
-                        newClient(text,1,user.socket);
+                        sentAll(newClient(text,1,socket,&cGuest),cGuest);
                   }
                   else
                   {
@@ -73,11 +73,11 @@ bool permition(char i)
         return false;
 }
 
-void kick(Host user)
+void kick(Host user,QList<Host> cGuest)
 {
-    sentAll("<strong>"+user.pseudo+"a était kick</strong>");
+    sentAll("<strong>"+user.pseudo+"a était kick</strong>",cGuest);
     if(user.lvl!=-1)
-        host.removeOne(user);
+        cGuest.removeOne(user);
 }
 
 void ban(Host user)

@@ -5,11 +5,8 @@
 #include <QtNetwork>
 #include <ctime>
 
-#include "client.h"
 #include "commande.h"
-
-#include <QtWidgets>
-#include <QtNetwork>
+#include "client.h"
 
 class mainserveur : public QWidget
 {
@@ -24,14 +21,17 @@ private slots:
 private:
     quint16 tailleMessage;
     QTcpServer *server;
+    QList<QTcpSocket *> guests;
+    QList<Host> cGuest;
 };
-void sentAll(const QString &text);
-void sentOne(const QString &text,Host user);
+
+void sentAll(const QString &text, QList<Host> cGuest);
+void sentOne(const QString &text, Host user);
 
 
 
 
-QList<QTcpSocket *> guests;
+
 
 
 

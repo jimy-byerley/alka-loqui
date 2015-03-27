@@ -3,7 +3,6 @@
 
 #include <QtWidgets>
 #include <QtNetwork>
-#include "mainserveur.h"
 
 class FenServ : public QWidget
 {

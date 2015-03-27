@@ -4,7 +4,6 @@
 #include "QString"
 #include <QTcpSocket>
 
-
 typedef struct
 {
     QString pseudo;
@@ -14,11 +13,9 @@ typedef struct
 }Host;
 
 bool operator==(Host const& a, Host const& b);
-void newClient(QString pseudo,const char lvl,QTcpSocket *newGuest);
-Host Pseudo2Host(QString pseudo);
-Host Socket2Client(QTcpSocket *socket);
-
-QList<Host> host;
+QString newClient(QString pseudo, const char lvl, QTcpSocket *newGuest, QList<Host> *cGuest);
+Host Pseudo2Host(QString pseudo, QList<Host> cGuest);
+Host Socket2Client(QTcpSocket *socket,QList<Host> cGuest);
 
 
 #endif // CLIENT_H
