@@ -21,7 +21,7 @@ private slots:
 private:
     quint16 tailleMessage;
     QTcpServer *server;
-    QList<QTcpSocket *> guests;
+//    QList<QTcpSocket *> guests;
     QList<Host> cGuest;
 };
 
