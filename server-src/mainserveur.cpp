@@ -28,7 +28,8 @@ QString mainserveur::demarage()
 void mainserveur::newCon()
     {
         QTcpSocket *newGuest = server->nextPendingConnection();
-        guests<< newGuest;
+        nCo nGuest={newGuest,0};
+        guests<< nGuest;
         connect(newGuest, SIGNAL(disconnected()),this ,SLOT(discGuest()));
         connect(newGuest, SIGNAL(readyRead()),this , SLOT(dataRec()));
 
@@ -36,50 +37,68 @@ void mainserveur::newCon()
 
 void mainserveur::dataRec()
     {
-
         QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
         if (socket == 0)
             return;
-
+        int i=found_nCo(socket);
         QDataStream paqEnt(socket);
 
-        if (tailleMessage == 0)
+        if (guests[i].tailleMessage == 0)
         {
             if (socket->bytesAvailable() < (int)sizeof(quint16))
                 return;
 
-            paqEnt >> tailleMessage;
+            paqEnt >> guests[i].tailleMessage;
         }
 
-        if (socket->bytesAvailable() < tailleMessage)
+        if (socket->bytesAvailable() < guests[i].tailleMessage)
             return;
 
-        Host user=Socket2Client(socket,cGuest);
+        Host user=Socket2Client(socket);
         QString text;
         paqEnt >> text;
-        if(user.lvl!=-1 && execCommand(text,user,socket,cGuest)) //Verification et execution de commande                 //modif
+        if(user.lvl!=-1 && execCommand(text,user,socket)) //Verification et execution de commande                 //modif
         {
 
             text="b" + user.pseudo + "</b> : "+text;
-            sentAll(text,cGuest);
+            sentAll(text);
+//            pthread_t t;
+//            pthread_create(&t,NULL,sentAll,*text)
         }
-        tailleMessage=0;
+        guests[i].tailleMessage=0;
     }
 void mainserveur::discGuest()
 {
     QTcpSocket *socket = qobject_cast<QTcpSocket*>(sender());
     if (socket == 0)
         return;
-    Host user=Socket2Client(socket,cGuest);                                                  //modif
+    Host user=Socket2Client(socket);                                                  //modif
     if(user.lvl!=-1)
     {
-        sentAll("<strong>"+user.pseudo+" nous a quitté</strong>",cGuest);
+        sentAll("<strong>"+user.pseudo+" nous a quitté</strong>");
         cGuest.removeOne(user);
     }
-    guests.removeOne(socket);
+    guests.removeOne(guests[found_nCo(socket)]);
     socket->deleteLater();
 }
-void sentAll(const QString &text,QList<Host> cGuest)
+
+int mainserveur::found_nCo(QTcpSocket *a)
+{
+    int i=0;
+    while(guests[i].socket!=a)
+    {
+        i++;
+    }
+    return i;
+}
+bool operator==(nCo a,nCo b)
+{
+    if(a.socket==b.socket)
+        return true;
+    return false;
+}
+
+void sentAll(QString text)
 {
     time_t secondes;
     struct tm instant;
@@ -89,7 +108,7 @@ void sentAll(const QString &text,QList<Host> cGuest)
 
     QString heure=QString::number(instant.tm_hour)+":"+QString::number(instant.tm_min)+":"+QString::number(instant.tm_sec);
     text=heure+" "+text;
-
+    textSer->append(text);  //affiche sur la fenetre du serveur
     QByteArray paquet;
     QDataStream out(&paquet, QIODevice::WriteOnly);
 
@@ -102,9 +121,8 @@ void sentAll(const QString &text,QList<Host> cGuest)
     {
         cGuest[i].socket->write(paquet);                                                //modif
     }
-
 }
-void sentOne(const QString &text,Host user)
+void sentOne(QString text, Host user)
 {
     time_t secondes;
     struct tm instant;
@@ -114,6 +132,8 @@ void sentOne(const QString &text,Host user)
 
     QString heure=QString::number(instant.tm_hour)+":"+QString::number(instant.tm_min)+":"+QString::number(instant.tm_sec);
     text=heure+" "+text;
+
+    textSer->append(text);
 
     QByteArray paquet;
     QDataStream out(&paquet, QIODevice::WriteOnly);
@@ -125,3 +145,4 @@ void sentOne(const QString &text,Host user)
 
     user.socket->write(paquet);
 }
+
