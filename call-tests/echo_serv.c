@@ -177,9 +177,9 @@ int recv_datas(void * params)
 	
 	printf("thread started\n");
 	set_nonblocking(*(netparams->socket));
-	while (netparams->alive == 1)
+	while (netparams->alive > 0)
 	{
-		printf("ok\n");
+		printf("thread %d    %d\n", );
 		t1 = clock();
 		n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), 0, netparams->source, &(netparams->source_size));
 		if (n >= 0)
