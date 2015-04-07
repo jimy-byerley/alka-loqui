@@ -35,12 +35,14 @@ Host Pseudo2Host(QString pseudo)
 int Pseudo2Num(QString pseudo)
 {
     int i=0;
+    qDebug("pseudo size:%d",pseudo.size());
     while(cGuest[i].pseudo!=pseudo && i<cGuest.size()-1)
     {
         if(i<cGuest.size()-1)
         i++;
+        qDebug("i:%d",i);
     }
-    if(i<cGuest.size()-1)
+    if(i<=cGuest.size()-1 && cGuest[i].pseudo==pseudo)
         return i;
     else
         return 0;

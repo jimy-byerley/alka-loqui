@@ -10,27 +10,40 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
         {
             text=text.right(1);
             int i=0;
-            while(text[i]!= QChar(' ') && i <(text.size()-1))
-            {
-                commande += text[i];
-                i++;
-            }
+            while(i <(text.size()-1) && text[i]!= QChar(' '))
+              {
+                  commande += text[i];
+                  if(i<(text.size()-1))
+                      i++;
+              }
             if(i<text.size())
             {
-                text=text.right(i+1);
+                text=text.right(text.size()-(i+1));
             }
          }
         int nUser=Pseudo2Num(text);
         bool pseudoEx = pseudoExistant(cGuest[nUser],user);
 
-              if( commande=="kick"&& pseudoEx &&permition(user.lvl))
-                kick(cGuest[nUser]);
-              else if(commande=="ban"&& pseudoEx &&permition(user.lvl))
-                ban(cGuest[nUser]);
-              else if(commande=="up" && pseudoEx && cGuest[nUser].lvl<3 &&permition(user.lvl))
-                cGuest[nUser].lvl+=1;
-              else if(commande=="down" && pseudoEx && cGuest[nUser].lvl>1 &&permition(user.lvl))
-                cGuest[nUser].lvl-=1;
+              if( commande=="kick" &&permition(user.lvl))
+              {
+                  if(pseudoEx)
+                    kick(cGuest[nUser]);
+              }
+              else if(commande=="ban"&&permition(user.lvl))
+              {
+                  if(pseudoEx)
+                     ban(cGuest[nUser]);
+              }
+              else if(commande=="up"&& cGuest[nUser].lvl<3 &&permition(user.lvl))
+              {
+                  if(pseudoEx)
+                    cGuest[nUser].lvl+=1;
+              }
+              else if(commande=="down"&& cGuest[nUser].lvl>1 &&permition(user.lvl))
+                  {
+                      if(pseudoEx)
+                          cGuest[nUser].lvl-=1;
+                  }
               else if(commande=="mp")
               {
                   int i=0;
@@ -38,6 +51,7 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
                   while(text[i]!=QChar(' ') and i <(text.size()-1))
                   {
                       p += text[i];
+                      if(i <(text.size()-1))
                       i++;
                   }
                   if(i<text.size())
@@ -50,7 +64,7 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
                     sentOne(text,cGuest[Pseudo2Num(p)]);
                   }
                   else
-                    sentOne("Pseudo indisponible",user);
+                    sentOne("Pseudo inconnue",user);
               }
               else if(commande=="pseudo")
                {
@@ -78,44 +92,39 @@ bool execCommandServ(QString text)
 {
     QString commande="";
     qDebug("%d",text.size());
-      int i=0;
-      while(i <(text.size()-1) && text[i]!= QChar(' '))
-        {
-            qDebug("test %d",i);
-            commande += text[i];
-            if(i<(text.size()-1))
-                i++;
-        }
-
+    int i=0;
+    while(i <(text.size()-1) && text[i]!= QChar(' '))
+      {
+          commande += text[i];
+          if(i<(text.size()-1))
+              i++;
+      }
     if(i<text.size())
     {
-
-        text=text.right(i+1);
-
+        text=text.right(text.size()-(i+1));
     }
-    qDebug("je suis passe par 1");
+
     int nUser=Pseudo2Num(text);
     qDebug("nUser=%d",nUser);
-      if( commande=="kick"&& pseudoExistantServ(cGuest[nUser]))
+      if( commande=="kick")
       {
-        kick(cGuest[nUser]);
-        return true;
+          if(pseudoExistantServ(cGuest[nUser]))
+            kick(cGuest[nUser]);
       }
       else if (commande=="say")
       {
-          text="[serveur]"+text;
-          qDebug("je suis passe par la");
+          text="[serveur]:"+text;
           sentAll(text);
-          return true;
       }
       else if(commande=="mp")
       {
           QString p;
           int i=0;
-          while(text[i]!=' ' and i <(text.size()-1))
+          while(text[i]!=QChar(' ') and i <(text.size()-1))
           {
               qDebug("i:%d",i);
               p += text[i];
+              if(i<(text.size()-1))
               i++;
           }
           if(i<text.size())
@@ -124,36 +133,40 @@ bool execCommandServ(QString text)
           }
           if(pseudoExistantServ(cGuest[Pseudo2Num(p)]))
           {
-            text="[serveur]:"+text;
+            text="[mp-serveur]:"+text;
             sentOne(text,cGuest[Pseudo2Num(p)]);
           }
           else
-           textSer->append("Pseudo indisponible");
-          return true;
+          {
+              return false;
+          }
       }
-      else if(commande=="ban"&& pseudoExistantServ(cGuest[nUser]))
+      else if(commande=="ban")
       {
-        ban(cGuest[nUser]);
-        return true;
+          if(pseudoExistantServ(cGuest[nUser]))
+            ban(cGuest[nUser]);
       }
-      else if(commande=="up" && pseudoExistantServ(cGuest[nUser]) && cGuest[nUser].lvl<3)
+      else if(commande=="up" && cGuest[nUser].lvl<3)
       {
-        cGuest[nUser].lvl+=1;
-        return true;
+          if(pseudoExistantServ(cGuest[nUser]))
+            cGuest[nUser].lvl+=1;
       }
-      else if(commande=="down" && pseudoExistantServ(cGuest[nUser]) && cGuest[nUser].lvl>1)
+      else if(commande=="down" && cGuest[nUser].lvl>1)
       {
-        cGuest[nUser].lvl-=1;
-        return true;
+          if(pseudoExistantServ(cGuest[nUser]))
+            cGuest[nUser].lvl-=1;
+      }
+      else if(commande=="stop")
+      {
+          //en reflexion
       }
       else
       {
         textSer->append("Erreur commande inconnus");
         return false;
       }  
-      qDebug("je suis passe par là?");
       return true;
-    }
+}
 
 bool pseudoExistantServ(Host user)
 {
@@ -187,8 +200,7 @@ bool permition(char i)
 
 void kick(Host user)
 {
-    sentAll("<strong>"+user.pseudo+"a était kick</strong>");
-    if(user.lvl!=-1)
+        sentAll("<i>"+user.pseudo+" a était kick</i>");
         cGuest.removeOne(user);
 }
 

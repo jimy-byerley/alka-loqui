@@ -5,6 +5,7 @@
 #include <QtNetwork>
 #include <ctime>
 #include <pthread.h>
+#include <fstream>
 
 #include "commande.h"
 #include "client.h"

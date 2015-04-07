@@ -8,6 +8,10 @@ mainserveur::mainserveur()
     Host defaut;
     defaut.lvl=-1;
     cGuest<<defaut;
+    Host poney;             //je suis là pour les tests
+    poney.lvl=1;
+    poney.pseudo="jack";
+    cGuest<<poney;
 }
 
 QString mainserveur::demarage()
@@ -29,7 +33,7 @@ void mainserveur::newCon()
     {
         QTcpSocket *newGuest = server->nextPendingConnection();
         nCo nGuest={newGuest,0};
-        guests<< nGuest;
+        guests<< nGuest;                //modif importante
         connect(newGuest, SIGNAL(disconnected()),this ,SLOT(discGuest()));
         connect(newGuest, SIGNAL(readyRead()),this , SLOT(dataRec()));
 
@@ -48,7 +52,7 @@ void mainserveur::dataRec()
             if (socket->bytesAvailable() < (int)sizeof(quint16))
                 return;
 
-            paqEnt >> guests[i].tailleMessage;
+            paqEnt >> guests[i].tailleMessage;                          //modif importante
         }
 
         if (socket->bytesAvailable() < guests[i].tailleMessage)
@@ -57,7 +61,7 @@ void mainserveur::dataRec()
         Host user=Socket2Client(socket);
         QString text;
         paqEnt >> text;
-        if(user.lvl!=-1 && execCommand(text,user,socket)) //Verification et execution de commande                 //modif
+        if(user.lvl!=-1 && execCommand(text,user,socket)) //Verification et execution de commande
         {
 
             text="b" + user.pseudo + "</b> : "+text;
@@ -72,7 +76,7 @@ void mainserveur::discGuest()
     QTcpSocket *socket = qobject_cast<QTcpSocket*>(sender());
     if (socket == 0)
         return;
-    Host user=Socket2Client(socket);                                                  //modif
+    Host user=Socket2Client(socket);
     if(user.lvl!=-1)
     {
         sentAll("<strong>"+user.pseudo+" nous a quitté</strong>");
@@ -105,10 +109,11 @@ void sentAll(QString text)
 
     time(&secondes);
     instant=*localtime(&secondes);
-
-    QString heure=QString::number(instant.tm_hour)+":"+QString::number(instant.tm_min)+":"+QString::number(instant.tm_sec);
+    QString heure="<"+QString::number(instant.tm_hour)+":"+QString::number(instant.tm_min)+":"+QString::number(instant.tm_sec)+">";
     text=heure+" "+text;
+
     textSer->append(text);  //affiche sur la fenetre du serveur
+
     QByteArray paquet;
     QDataStream out(&paquet, QIODevice::WriteOnly);
 
@@ -116,8 +121,8 @@ void sentAll(QString text)
     out << text;
     out.device()->seek(0);
     out << (quint16) (paquet.size() - sizeof(quint16));
-
-    for (int i = 0; i < cGuest.size(); i++)
+    qDebug("initialisé i=0 pas a 1");
+    for (int i = 1; i < cGuest.size()-1; i++)                                           //initialisé i=0
     {
         cGuest[i].socket->write(paquet);                                                //modif
     }
