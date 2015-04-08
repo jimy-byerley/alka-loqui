@@ -92,19 +92,18 @@ int stream_callback( const void *input, void *output,
 	PaStreamCallbackFlags statusFlags,
 	void * userData)
 {
-	float *out = (float*)output;
+	float *in = (float*)input;
 	unsigned int i;
 	stream_opts * params = (stream_opts*)userData;
 	for (i=0; i<frameCount; i++)
 	{
-		out[i] = params->soundbuffer[i] * params->volume;
+		params->soundbuffer[i] = in[i] * params->volume;
 	}
 	return 0;
 }
 
 int set_nonblocking(const int descriptor)
 {
-	
 	#if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
 
         int nonBlocking = 1;
@@ -124,31 +123,6 @@ int set_nonblocking(const int descriptor)
         }
 
     #endif
-    
-	/*
-	fcntl(descriptor, F_SETFL, O_NONBLOCK);
-	*/
-	/*
-	if (descriptor < 0) return -1;
-
-	char blocking = 0;
-	#ifdef WIN32
-		return (ioctlsocket(descriptor, FIONBIO, &blocking) == 0) ? 0 : -1;
-	#else
-		int flags = fcntl(descriptor, F_GETFL, 0);
-		if (flags < 0) return -1;
-		flags = blocking ? (flags&~O_NONBLOCK) : (flags|O_NONBLOCK);
-		return (fcntl(descriptor, F_SETFL, flags) == 0) ? 0 : -1;
-	#endif
-	*/
-	/*
-	// where socket descriptor is the socket you want to make non-blocking
-	int status = fcntl(descriptor, F_SETFL, fcntl(descriptor, F_GETFL, 0) | O_NONBLOCK);
-
-	if (status == -1)
-		perror("calling fcntl");
-	// handle the error.  By the way, I've never seen fcntl fail in this way
-	*/
 }
 
 int set_blocking(const int descriptor)
@@ -160,9 +134,9 @@ int set_blocking(const int descriptor)
 typedef struct {
 	float * soundbuffer;
 	char alive;
-	int packetspace;
-	SOCKADDR * source;
-	int source_size;
+	int packetspace;    /* time to wait between 2 packets (ms) */
+	SOCKADDR * dest;
+	int dest_size;
 	SOCKET * socket;
 } network_opts;
 
@@ -177,16 +151,11 @@ int recv_datas(void * params)
 	while (netparams->alive > 0)
 	{
 		t1 = clock();
-		n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), 0, 0, 0);
- 		//n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), MSG_DONTWAIT, netparams->source, &(netparams->source_size));
-		printf(buffer);
-		if (n > 0)
-		{
-			memcpy(netparams->soundbuffer, buffer, n);
-			t2 = clock();
-			towait = netparams->packetspace - (t2-t1)/CLOCKS_PER_SEC * 1000;
-			if (towait > 0) sleep_ms(towait);
-		}
+		n = sendto(*(netparams->socket), netparams->soundbuffer, sizeof(netparams->soundbuffer), 0, 0, 0);
+		//printf(netparams->soundbuffer);
+		t2 = clock();
+		towait = netparams->packetspace - (t2-t1)/CLOCKS_PER_SEC * 1000;
+		if (towait > 0) sleep_ms(towait);
 	}
 	
 	pthread_exit(0);
@@ -203,32 +172,28 @@ int main(int argc, const char * argv[])
 	parameters.volume = 1;
 	parameters.soundbuffer = malloc(256 * sizeof(float));
 	
-	SOCKET sock = 0;
 	network_opts netparams;
 	pthread_t receiver;
+	SOCKADDR_IN to = {0};
 	
 	
 	network_init();
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if(sock == INVALID_SOCKET)
 	{
 		perror("socket()");
 		exit(errno);
 	}
-	SOCKADDR_IN server     = {0};
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
-	server.sin_family      = AF_INET;
-	server.sin_port        = 6000;
-	if (bind(sock, (SOCKADDR*) &server, sizeof(server)) == SOCKET_ERROR)
-	{
-		perror("bind()");
-		exit(errno);
-	}
+	
+	to.sin_addr.s_addr = inet_addr("192.168.1.27");
+	to.sin_port = htons(6000);
+	to.sin_family = AF_INET;
+	
 	netparams.soundbuffer = parameters.soundbuffer;
 	netparams.alive       = 1;
 	netparams.socket      = &sock;
-	netparams.source      = (SOCKADDR*) &server;
-	netparams.source_size = sizeof(server);
+	netparams.dest        = (SOCKADDR *) &to;
+	netparams.dest_size   = sizeof(to);
 	netparams.packetspace = 10;
 	
 	
@@ -237,7 +202,7 @@ int main(int argc, const char * argv[])
 	if (err != paNoError) goto error;
 	err = Pa_OpenDefaultStream( 
 		&stream,
-		0,         /* input channel */
+		1,         /* input channel */
 		1,         /* stero input */
 		paFloat32, /* 32 bit float */
 		7100, /* taux d'echantillonnage : 14400 */
