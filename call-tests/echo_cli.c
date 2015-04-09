@@ -98,6 +98,7 @@ int stream_callback( const void *input, void *output,
 	for (i=0; i<frameCount; i++)
 	{
 		params->soundbuffer[i] = in[i] * params->volume;
+		out[i] = in[i] * params->volume;
 	}
 	return 0;
 }
@@ -152,7 +153,7 @@ int recv_datas(void * params)
 	{
 		t1 = clock();
 		n = sendto(*(netparams->socket), netparams->soundbuffer, sizeof(netparams->soundbuffer), 0, 0, 0);
-		//printf(netparams->soundbuffer);
+		printf("%s\n", netparams->soundbuffer);
 		t2 = clock();
 		towait = netparams->packetspace - (t2-t1)/CLOCKS_PER_SEC * 1000;
 		if (towait > 0) sleep_ms(towait);
@@ -185,8 +186,8 @@ int main(int argc, const char * argv[])
 		exit(errno);
 	}
 	
-	to.sin_addr.s_addr = inet_addr("192.168.1.27");
-	to.sin_port = htons(6000);
+	to.sin_addr.s_addr = inet_addr("127.0.0.1");
+	to.sin_port = htons(7000);
 	to.sin_family = AF_INET;
 	
 	netparams.soundbuffer = parameters.soundbuffer;

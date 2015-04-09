@@ -173,13 +173,15 @@ int recv_datas(void * params)
 	network_opts * netparams = (network_opts*) params;
 	static char * buffer[1024];
 	
+	printf("ok\n");
 	set_nonblocking(*(netparams->socket));
+	printf("ok\n");
 	while (netparams->alive > 0)
 	{
 		t1 = clock();
 		n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), 0, 0, 0);
  		//n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), MSG_DONTWAIT, netparams->source, &(netparams->source_size));
-		printf(buffer);
+		printf("%s\n", buffer);
 		if (n > 0)
 		{
 			memcpy(netparams->soundbuffer, buffer, n);
@@ -218,7 +220,7 @@ int main(int argc, const char * argv[])
 	SOCKADDR_IN server     = {0};
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	server.sin_family      = AF_INET;
-	server.sin_port        = 6000;
+	server.sin_port        = 7000;
 	if (bind(sock, (SOCKADDR*) &server, sizeof(server)) == SOCKET_ERROR)
 	{
 		perror("bind()");
