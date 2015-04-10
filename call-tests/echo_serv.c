@@ -42,6 +42,8 @@
 #endif
 
 
+#define min(a,b) (a<b?a:b)
+
 
 void sleep_ms(int milliseconds) // cross-platform sleep function
 {
@@ -163,7 +165,7 @@ typedef struct {
 	int packetspace;
 	SOCKADDR * source;
 	int source_size;
-	SOCKET * socket;
+	SOCKET socket;
 } network_opts;
 
 int recv_datas(void * params)
@@ -173,18 +175,16 @@ int recv_datas(void * params)
 	network_opts * netparams = (network_opts*) params;
 	static char * buffer[1024];
 	
-	printf("ok\n");
-	set_nonblocking(*(netparams->socket));
-	printf("ok\n");
+	set_nonblocking(netparams->socket);
 	while (netparams->alive > 0)
 	{
 		t1 = clock();
-		n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), 0, 0, 0);
+		n = recvfrom(netparams->socket, buffer, sizeof buffer, 0, 0, 0);
  		//n = recvfrom(*(netparams->socket), buffer, sizeof(buffer), MSG_DONTWAIT, netparams->source, &(netparams->source_size));
-		printf("%s\n", buffer);
+		printf("%d\n", n);
 		if (n > 0)
 		{
-			memcpy(netparams->soundbuffer, buffer, n);
+			memcpy(netparams->soundbuffer, buffer, 1024);
 			t2 = clock();
 			towait = netparams->packetspace - (t2-t1)/CLOCKS_PER_SEC * 1000;
 			if (towait > 0) sleep_ms(towait);
@@ -218,9 +218,9 @@ int main(int argc, const char * argv[])
 		exit(errno);
 	}
 	SOCKADDR_IN server     = {0};
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
+	server.sin_addr.s_addr = inet_addr("127.0.0.1"); //htonl(INADDR_ANY);
 	server.sin_family      = AF_INET;
-	server.sin_port        = 7000;
+	server.sin_port        = htons(7000);
 	if (bind(sock, (SOCKADDR*) &server, sizeof(server)) == SOCKET_ERROR)
 	{
 		perror("bind()");
@@ -228,10 +228,10 @@ int main(int argc, const char * argv[])
 	}
 	netparams.soundbuffer = parameters.soundbuffer;
 	netparams.alive       = 1;
-	netparams.socket      = &sock;
+	netparams.socket      = sock;
 	netparams.source      = (SOCKADDR*) &server;
 	netparams.source_size = sizeof(server);
-	netparams.packetspace = 10;
+	netparams.packetspace = 50;
 	
 	
 	/** init pa **/
