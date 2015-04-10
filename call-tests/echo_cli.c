@@ -93,12 +93,13 @@ int stream_callback( const void *input, void *output,
 	void * userData)
 {
 	float *in = (float*)input;
+	float *out = (float*)output;
 	unsigned int i;
 	stream_opts * params = (stream_opts*)userData;
 	for (i=0; i<frameCount; i++)
 	{
 		params->soundbuffer[i] = in[i] * params->volume;
-		out[i] = in[i] * params->volume;
+		//out[i] = in[i] * params->volume;
 	}
 	return 0;
 }
@@ -138,7 +139,7 @@ typedef struct {
 	int packetspace;    /* time to wait between 2 packets (ms) */
 	SOCKADDR * dest;
 	int dest_size;
-	SOCKET * socket;
+	SOCKET socket;
 } network_opts;
 
 int recv_datas(void * params)
@@ -148,11 +149,11 @@ int recv_datas(void * params)
 	network_opts * netparams = (network_opts*) params;
 	static char * buffer[1024];
 	
-	set_nonblocking(*(netparams->socket));
+	set_nonblocking(netparams->socket);
 	while (netparams->alive > 0)
 	{
 		t1 = clock();
-		n = sendto(*(netparams->socket), netparams->soundbuffer, sizeof(netparams->soundbuffer), 0, 0, 0);
+		n = sendto(netparams->socket, netparams->soundbuffer, sizeof(buffer), 0, netparams->dest, netparams->dest_size);
 		printf("%s\n", netparams->soundbuffer);
 		t2 = clock();
 		towait = netparams->packetspace - (t2-t1)/CLOCKS_PER_SEC * 1000;
@@ -192,10 +193,10 @@ int main(int argc, const char * argv[])
 	
 	netparams.soundbuffer = parameters.soundbuffer;
 	netparams.alive       = 1;
-	netparams.socket      = &sock;
+	netparams.socket      = sock;
 	netparams.dest        = (SOCKADDR *) &to;
 	netparams.dest_size   = sizeof(to);
-	netparams.packetspace = 10;
+	netparams.packetspace = 50;
 	
 	
 	/** init pa **/
