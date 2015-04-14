@@ -18,7 +18,7 @@ QString newClient(QString pseudo, const char lvl, QTcpSocket *newGuest)
     nClient.socket=newGuest;
     nClient.tailleMessage=0;
     cGuest.append(nClient);
-    return "<strong>"+pseudo+" nous a quitté</strong>";
+    return "<strong>"+pseudo+" nous a rejoind</strong>";
 }
 Host Pseudo2Host(QString pseudo)
 {
@@ -35,12 +35,10 @@ Host Pseudo2Host(QString pseudo)
 int Pseudo2Num(QString pseudo)
 {
     int i=0;
-    qDebug("pseudo size:%d",pseudo.size());
     while(cGuest[i].pseudo!=pseudo && i<cGuest.size()-1)
     {
         if(i<cGuest.size()-1)
         i++;
-        qDebug("i:%d",i);
     }
     if(i<=cGuest.size()-1 && cGuest[i].pseudo==pseudo)
         return i;
@@ -51,12 +49,17 @@ int Pseudo2Num(QString pseudo)
 Host Socket2Client(QTcpSocket *socket)
 {
     int i=0;
-    while(cGuest[i].socket!=socket && i<cGuest.size())
+    while(cGuest[i].socket!=socket && i<cGuest.size()-1)
     {
+        if(i<cGuest.size()-1)
         i++;
     }
     if(i<cGuest.size())
+    {
         return cGuest[i];
+    }
     else
+    {
         return cGuest[0];
+    }
 }

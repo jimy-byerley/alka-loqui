@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2015-02-17T17:20:07
+# Project created by QtCreator 2015-04-10T10:40:41
 #
 #-------------------------------------------------
 
@@ -13,8 +13,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        fenguest.cpp
+    fenguest.cpp \
+    fenGuestW.cpp
 
-HEADERS  += fenguest.h
 
-FORMS +=
+HEADERS  += fenguest.h\
+    fenGuestW.h

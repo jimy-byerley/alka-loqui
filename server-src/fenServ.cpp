@@ -13,6 +13,7 @@ FenServ::FenServ()
     ligneCom = new QLineEdit;
     quitBu = new QPushButton(tr("Quitter"));
     buSent = new QPushButton(tr("Envoyer"));
+    textSer->setReadOnly(true);
 
     QVBoxLayout *layout = new QVBoxLayout;
     QHBoxLayout *layout2 = new QHBoxLayout;

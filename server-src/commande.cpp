@@ -8,7 +8,7 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
         QString commande;
         if(text.size()>1)
         {
-            text=text.right(1);
+            text=text.right(text.size()-1);
             int i=0;
             while(i <(text.size()-1) && text[i]!= QChar(' '))
               {
@@ -20,29 +20,32 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
             {
                 text=text.right(text.size()-(i+1));
             }
+          ;
          }
         int nUser=Pseudo2Num(text);
-        bool pseudoEx = pseudoExistant(cGuest[nUser],user);
-
-              if( commande=="kick" &&permition(user.lvl))
+              if( commande=="kick" && permition(user.lvl))
               {
-                  if(pseudoEx)
+                  if(pseudoExistant(cGuest[nUser],user)) //renvoie un message d'erreur si le pseudo n'existe pas (raison de la condition interne)
                     kick(cGuest[nUser]);
+                  return false;
               }
               else if(commande=="ban"&&permition(user.lvl))
               {
-                  if(pseudoEx)
-                     ban(cGuest[nUser]);
+                  if(pseudoExistant(cGuest[nUser],user))
+                     sentOne(ban(cGuest[nUser]),user);
+                  return false;
               }
               else if(commande=="up"&& cGuest[nUser].lvl<3 &&permition(user.lvl))
               {
-                  if(pseudoEx)
+                  if(pseudoExistant(cGuest[nUser],user))
                     cGuest[nUser].lvl+=1;
+                  return false;
               }
               else if(commande=="down"&& cGuest[nUser].lvl>1 &&permition(user.lvl))
                   {
-                      if(pseudoEx)
+                      if(pseudoExistant(cGuest[nUser],user))
                           cGuest[nUser].lvl-=1;
+                      return false;
                   }
               else if(commande=="mp")
               {
@@ -65,24 +68,31 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
                   }
                   else
                     sentOne("Pseudo inconnue",user);
+                  return false;
               }
               else if(commande=="pseudo")
                {
                   if(cGuest[nUser].lvl==-1)
                   {
                      if(user.lvl!=-1)
-                        user.pseudo=text;
+                     {
+                        cGuest[Pseudo2Num(user.pseudo)].pseudo=text;
+                        sentAll(user.pseudo+" c'est renommé en "+text);
+                     }
                      else
                         sentAll(newClient(text,1,socket));
+                     return false;
                   }
                   else
                   {
                       sentOne("Pseudo indisponible",user);
+                      return false;
                   }
                }
               else
               {
                 sentOne("Erreur commande inconnus",user);
+                return false;
               }
         return false;
         }
@@ -91,7 +101,6 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
 bool execCommandServ(QString text)
 {
     QString commande="";
-    qDebug("%d",text.size());
     int i=0;
     while(i <(text.size()-1) && text[i]!= QChar(' '))
       {
@@ -105,7 +114,6 @@ bool execCommandServ(QString text)
     }
 
     int nUser=Pseudo2Num(text);
-    qDebug("nUser=%d",nUser);
       if( commande=="kick")
       {
           if(pseudoExistantServ(cGuest[nUser]))
@@ -122,14 +130,13 @@ bool execCommandServ(QString text)
           int i=0;
           while(text[i]!=QChar(' ') and i <(text.size()-1))
           {
-              qDebug("i:%d",i);
               p += text[i];
               if(i<(text.size()-1))
               i++;
           }
           if(i<text.size())
           {
-              text=text.right(i+1);
+              text=text.right(text.size()-(i+1));
           }
           if(pseudoExistantServ(cGuest[Pseudo2Num(p)]))
           {
@@ -144,7 +151,11 @@ bool execCommandServ(QString text)
       else if(commande=="ban")
       {
           if(pseudoExistantServ(cGuest[nUser]))
-            ban(cGuest[nUser]);
+             textSer->append(ban(cGuest[nUser]));
+      }
+      else if(commande=="unban")
+      {
+          textSer->append(unban(text));
       }
       else if(commande=="up" && cGuest[nUser].lvl<3)
       {
@@ -201,10 +212,52 @@ bool permition(char i)
 void kick(Host user)
 {
         sentAll("<i>"+user.pseudo+" a était kick</i>");
+        user.socket->deleteLater();
         cGuest.removeOne(user);
 }
-
-void ban(Host user)
+QString unban(QString user)
 {
-    user.lvl;
+    QFile blackList(BlackList);
+    if(!blackList.open(QIODevice::ReadWrite | QIODevice::Text))
+    {
+        return"erreur lors de l'ouverture de la blacklist";
+    }
+    QTextStream in(&blackList);
+    int c=0;
+    while (!in.atEnd())
+    {
+        QString pseudo="";
+        QString line = in.readLine();
+        int i=0;
+        while(line[i]!=QChar(' ') and i <(line.size()-1))
+        {
+            pseudo+=line[i];
+            if(i<(line.size()-1))
+            i++;
+        }
+        if(pseudo==user)
+        {
+            in<<in.readAll().remove(c,c+line.size()-1);
+            return pseudo+" a ete unban";
+        }
+        c++;
+        //process_line(line);
+    }
+    return user+" n'a pas etait trouve dans la blacklist";
+}
+
+QString ban(Host user)
+{
+    QFile blackList(BlackList);
+    if(!blackList.open(QIODevice::ReadWrite | QIODevice::Text))
+    {
+        return"erreur lors de l'ouverture de la blacklist";
+    }
+    QTextStream out(&blackList);
+    out<<blackList.readAll();
+    out<<user.pseudo+" \n";
+    //out<<user.socket->localAddress().toString()+"\n";
+    sentAll("<serveur>"+user.pseudo+" a ete bannis");
+    cGuest.removeOne(user);
+    return "pour debannir "+user.pseudo+" utilise la fonction unban";
 }

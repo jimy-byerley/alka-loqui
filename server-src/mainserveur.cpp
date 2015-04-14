@@ -1,5 +1,6 @@
 #include "mainserveur.h"
 
+
 mainserveur::mainserveur()
 {
     server = new QTcpServer(this);
@@ -7,11 +8,8 @@ mainserveur::mainserveur()
     tailleMessage = 0;
     Host defaut;
     defaut.lvl=-1;
+    defaut.socket=NULL;
     cGuest<<defaut;
-    Host poney;             //je suis là pour les tests
-    poney.lvl=1;
-    poney.pseudo="jack";
-    cGuest<<poney;
 }
 
 QString mainserveur::demarage()
@@ -26,17 +24,25 @@ QString mainserveur::demarage()
         servStat="Démarrage accompli avec succès sur le port <strong>"+ QString::number(server->serverPort()) +"</strong>.<br />Les clients peuvent se connecter";
         connect(server, SIGNAL(newConnection()),this, SLOT(newCon()));
     }
+    QFile listC(ListCF);
+    if(!listC.open(QIODevice::ReadWrite | QIODevice::Text))
+        textSer->append("Erreur avec la liste des clients");
+    QFile blackList(BlackList);
+    if(!blackList.open(QIODevice::ReadWrite | QIODevice::Text))
+        textSer->append("Erreur avec la blackList");
     return servStat;
 }
 
 void mainserveur::newCon()
     {
         QTcpSocket *newGuest = server->nextPendingConnection();
+        if(blackListIp(newGuest))
+        {
         nCo nGuest={newGuest,0};
         guests<< nGuest;                //modif importante
         connect(newGuest, SIGNAL(disconnected()),this ,SLOT(discGuest()));
         connect(newGuest, SIGNAL(readyRead()),this , SLOT(dataRec()));
-
+        }
     }
 
 void mainserveur::dataRec()
@@ -44,7 +50,7 @@ void mainserveur::dataRec()
         QTcpSocket *socket = qobject_cast<QTcpSocket *>(sender());
         if (socket == 0)
             return;
-        int i=found_nCo(socket);
+        int i = found_nCo(socket);
         QDataStream paqEnt(socket);
 
         if (guests[i].tailleMessage == 0)
@@ -61,13 +67,15 @@ void mainserveur::dataRec()
         Host user=Socket2Client(socket);
         QString text;
         paqEnt >> text;
-        if(user.lvl!=-1 && execCommand(text,user,socket)) //Verification et execution de commande
+        if(execCommand(text,user,socket)) //Verification et execution de commande
         {
-
-            text="b" + user.pseudo + "</b> : "+text;
+            if(user.lvl!=-1)
+            {
+            text="[" + user.pseudo + "]: "+text;
             sentAll(text);
 //            pthread_t t;
 //            pthread_create(&t,NULL,sentAll,*text)
+            }
         }
         guests[i].tailleMessage=0;
     }
@@ -121,11 +129,11 @@ void sentAll(QString text)
     out << text;
     out.device()->seek(0);
     out << (quint16) (paquet.size() - sizeof(quint16));
-    qDebug("initialisé i=0 pas a 1");
-    for (int i = 1; i < cGuest.size()-1; i++)                                           //initialisé i=0
+    for (int i = 1; i < cGuest.size(); i++)
     {
         cGuest[i].socket->write(paquet);                                                //modif
     }
+
 }
 void sentOne(QString text, Host user)
 {
@@ -135,7 +143,7 @@ void sentOne(QString text, Host user)
     time(&secondes);
     instant=*localtime(&secondes);
 
-    QString heure=QString::number(instant.tm_hour)+":"+QString::number(instant.tm_min)+":"+QString::number(instant.tm_sec);
+    QString heure="<"+QString::number(instant.tm_hour)+":"+QString::number(instant.tm_min)+":"+QString::number(instant.tm_sec)+">";
     text=heure+" "+text;
 
     textSer->append(text);
@@ -147,7 +155,29 @@ void sentOne(QString text, Host user)
     out << text;
     out.device()->seek(0);
     out << (quint16) (paquet.size() - sizeof(quint16));
-
     user.socket->write(paquet);
 }
-
+bool blackListIp(QTcpSocket *a)
+{
+    QString ipA=a->localAddress().toString();
+    QFile Black(BlackList);
+    if(!Black.open(QIODevice::ReadOnly | QIODevice::Text))
+        textSer->append("Erreur de lecture de la blacklist");
+        return TRUE; //part defaut on accepte
+    QTextStream in(&Black);
+    while (!in.atEnd())
+    {
+        QString line = in.readLine();
+        int i=0;
+        while(line[i]!=QChar(' ') and i <(line.size()-1))
+        {
+            if(i<(line.size()-1))
+            i++;
+        }
+        line=line.right(line.size()-(i+1));
+        if(line==ipA)
+            return FALSE;
+        //process_line(line);
+    }
+    return TRUE;
+}

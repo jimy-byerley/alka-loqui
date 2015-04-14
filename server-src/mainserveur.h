@@ -1,11 +1,14 @@
 #ifndef MAINSERVEUR_H
 #define MAINSERVEUR_H
 
+#define BlackList "BlackList.txt"
+#define ListCF "ListClient.txt"
+
 #include <QtWidgets>
 #include <QtNetwork>
 #include <ctime>
 #include <pthread.h>
-#include <fstream>
+#include <QFile>
 
 #include "commande.h"
 #include "client.h"
@@ -36,6 +39,7 @@ private:
     QList<nCo> guests;
 };
 
+bool blackListIp(QTcpSocket *a);
 bool operator==(nCo a,nCo b);
 void sentAll(QString text);
 void sentOne(QString text, Host user);

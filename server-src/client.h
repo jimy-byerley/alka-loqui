@@ -17,7 +17,7 @@ extern QList<Host> cGuest;
 bool operator==(Host const& a, Host const& b);
 QString newClient(QString pseudo, const char lvl, QTcpSocket *newGuest);
 Host Pseudo2Host(QString pseudo);
-Host Socket2Client(QTcpSocket *socket);
+Host Socket2Client(QTcpSocket *socket); //inicialise
 int Pseudo2Num(QString pseudo);
 
 
