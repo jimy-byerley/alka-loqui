@@ -19,6 +19,6 @@ QString ban(Host user);
 QString unban(QString user);
 void kick(Host user);
 bool pseudoExistant(Host user, Host requet);
-bool permition(char i);
+bool permition(Host i);
 
 #endif

@@ -54,7 +54,7 @@ Host Socket2Client(QTcpSocket *socket)
         if(i<cGuest.size()-1)
         i++;
     }
-    if(i<cGuest.size())
+    if(cGuest[i].socket==socket)
     {
         return cGuest[i];
     }

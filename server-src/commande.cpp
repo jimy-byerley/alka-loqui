@@ -23,29 +23,44 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
           ;
          }
         int nUser=Pseudo2Num(text);
-              if( commande=="kick" && permition(user.lvl))
+              if( commande=="kick")
               {
+                  if(permition(user))
+                  {
                   if(pseudoExistant(cGuest[nUser],user)) //renvoie un message d'erreur si le pseudo n'existe pas (raison de la condition interne)
                     kick(cGuest[nUser]);
+                  }
                   return false;
               }
-              else if(commande=="ban"&&permition(user.lvl))
+              else if(commande=="ban")
               {
+                  if(permition(user))
+                  {
                   if(pseudoExistant(cGuest[nUser],user))
                      sentOne(ban(cGuest[nUser]),user);
+
+                  }
                   return false;
               }
-              else if(commande=="up"&& cGuest[nUser].lvl<3 &&permition(user.lvl))
+              else if(commande=="up")
               {
-                  if(pseudoExistant(cGuest[nUser],user))
+                  if(permition(user))
+                  {
+                  if(pseudoExistant(cGuest[nUser],user)&& cGuest[nUser].lvl<3)
                     cGuest[nUser].lvl+=1;
+
+                  }
                   return false;
               }
-              else if(commande=="down"&& cGuest[nUser].lvl>1 &&permition(user.lvl))
+              else if(commande=="down")
                   {
-                      if(pseudoExistant(cGuest[nUser],user))
+                    if(permition(user))
+                    {
+                      if(pseudoExistant(cGuest[nUser],user)&& cGuest[nUser].lvl>1)
                           cGuest[nUser].lvl-=1;
-                      return false;
+
+                    }
+                    return false;
                   }
               else if(commande=="mp")
               {
@@ -89,6 +104,15 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
                       return false;
                   }
                }
+              else if(commande=="list")
+              {
+                  QString list="";
+                  for(int i = 1; i < cGuest.size(); i++)
+                  {
+                    list+=cGuest[i].pseudo+" ";
+                  }
+                  sentOne(list,user);
+              }
               else
               {
                 sentOne("Erreur commande inconnus",user);
@@ -160,7 +184,10 @@ bool execCommandServ(QString text)
       else if(commande=="up" && cGuest[nUser].lvl<3)
       {
           if(pseudoExistantServ(cGuest[nUser]))
-            cGuest[nUser].lvl+=1;
+          {
+              cGuest[nUser].lvl+=1;
+              sentAll(cGuest[nUser].pseudo+" a etait up");
+          }
       }
       else if(commande=="down" && cGuest[nUser].lvl>1)
       {
@@ -170,6 +197,15 @@ bool execCommandServ(QString text)
       else if(commande=="stop")
       {
           //en reflexion
+      }
+      else if(commande=="list")
+      {
+          QString list="";
+          for(int i = 1; i < cGuest.size(); i++)
+          {
+            list+=cGuest[i].pseudo+" ";
+          }
+          textSer->append(list);
       }
       else
       {
@@ -201,12 +237,15 @@ bool pseudoExistant(Host user,Host requet)
     }
 }
 
-bool permition(char i)
+bool permition(Host i)
 {
-    if(i>1)
+    if(i.lvl>1)
         return true;
     else
+    {
+        sentOne("vous n'avais pas les droits",i);
         return false;
+    }
 }
 
 void kick(Host user)
