@@ -1,2 +1,2 @@
-HEADERS = fenguest.h
-SOURCES = fenguest.cpp main.cpp
+HEADERS = client_audio.h fenguest.h
+SOURCES = client_audio.cpp fenguest.cpp main.cpp

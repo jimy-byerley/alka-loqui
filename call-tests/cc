@@ -1,4 +1,4 @@
 #!/bin/bash
 # a utiliser quand on a la fleme de se taper les options de gcc
-gcc -Iportaudio-linux/usr/include -Lportaudio-linux/usr/lib/x86_64-linux-gnu "$@" -lm -lportaudio
+gcc -I../portaudio-linux/usr/include -L../portaudio-linux/usr/lib/x86_64-linux-gnu "$@" -lm -lportaudio
 

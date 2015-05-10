@@ -1,5 +1,6 @@
 #include "client.h"
 
+QList<Host> cGuest;
 
 bool operator==(Host const& a, Host const& b)
 {
@@ -9,16 +10,17 @@ bool operator==(Host const& a, Host const& b)
         return false;
 }
 
-QString newClient(QString pseudo, const char lvl, QTcpSocket *newGuest, QList<Host> *cGuest)
+QString newClient(QString pseudo, const char lvl, QTcpSocket *newGuest)
 {
     Host nClient;
     nClient.lvl=lvl;
     nClient.pseudo=pseudo;
     nClient.socket=newGuest;
-    cGuest->append(nClient);
-    return "<strong>"+pseudo+" nous a quitté</strong>";
+    nClient.tailleMessage=0;
+    cGuest.append(nClient);
+    return "<strong>"+pseudo+" nous a rejoind</strong>";
 }
-Host Pseudo2Host(QString pseudo, QList<Host> cGuest)
+Host Pseudo2Host(QString pseudo)
 {
     int i=0;
     while(cGuest[i].pseudo!=pseudo && i<cGuest.size())
@@ -30,15 +32,34 @@ Host Pseudo2Host(QString pseudo, QList<Host> cGuest)
     else
         return cGuest[0];
 }
-Host Socket2Client(QTcpSocket *socket, QList<Host> cGuest)
+int Pseudo2Num(QString pseudo)
 {
     int i=0;
-    while(cGuest[i].socket!=socket && i<cGuest.size())
+    while(cGuest[i].pseudo!=pseudo && i<cGuest.size()-1)
     {
+        if(i<cGuest.size()-1)
         i++;
     }
-    if(i<cGuest.size())
-        return cGuest[i];
+    if(i<=cGuest.size()-1 && cGuest[i].pseudo==pseudo)
+        return i;
     else
+        return 0;
+}
+
+Host Socket2Client(QTcpSocket *socket)
+{
+    int i=0;
+    while(cGuest[i].socket!=socket && i<cGuest.size()-1)
+    {
+        if(i<cGuest.size()-1)
+        i++;
+    }
+    if(cGuest[i].socket==socket)
+    {
+        return cGuest[i];
+    }
+    else
+    {
         return cGuest[0];
+    }
 }

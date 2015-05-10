@@ -25,3 +25,4 @@ HEADERS  += fenserv.h\
     mainserveur.h
 
 
+FORMS    +=
