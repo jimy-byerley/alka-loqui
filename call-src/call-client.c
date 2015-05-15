@@ -29,16 +29,18 @@ int sound_client_main(void * params)
 	int i, n;
 	
 	client_data * client = (client_data*) params;
-	set_nonblocking(client->socket);
+	set_blocking(client->socket);
 	while (client->alive > 0)
 	{
 		t1 = clock();
 		n = recvfrom(client->socket, client->recv_buffer, client->recv_buffer_size, 0, 0, 0);
 		if (n > 0)
 		{
-			ident = *((long*) client->recv_buffer;
-			memcpy(client->recv_buffer, client->playbuffer, client->sound_size);
+			client->hostident = *((long*) client->recv_buffer;
+			memcpy(client->recv_buffer+sizeof(long), client->playbuffer, client->sound_size);
 		}
+		*((long*)client->recv_buffer) = client->hostident;
+		memcpy(client->recordbuffer, client->recv_buffer, client->sound_size);
 		n = sendto(client->socket, client->recv_buffer, client->recv_buffer_size, 0, client->source, client->source_size);
 		t2 = clock();
 		towait = client->packetinterval - (t2-t1);

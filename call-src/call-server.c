@@ -17,54 +17,54 @@
 */
 typedef struct {
 	float * soundbuffer;                    // buffer des sons cumulés de tous les clients.
-	float * hostsbufers [HOSTNUMBER_MAX];   // buffers des sons émis par tous les clients.
-	char * clocks;                          // dates des dernières émissions des clients.
-	char alive;                 // drapeau 'doit fonctionner' pour le serveur, mettre à 0 pour qu'il s'arrete.
-	int packetinterval;         // interval de temps (ms) entre chaque reception de packet.
-	int sendinterval;           // interval de temps (ms) entre chaque emission aux clients.
-	int sound_size;             // taille des buffers de sons des clients et du buffer de son general.
+	float * hostsbuffers [HOSTNUMBER_MAX];  // buffers des sons émis par tous les clients.
+	unsigned char * clocks;                 // dates des dernières émissions des clients.
+	unsigned char alive;                    // drapeau 'doit fonctionner' pour le serveur, mettre à 0 pour qu'il s'arrete.
+	unsigned int packetinterval;            // interval de temps (ms) entre chaque reception de packet.
+	unsigned int sendinterval;              // interval de temps (ms) entre chaque emission aux clients.
 	
 	SOCKADDR * source;          // addresse du serveur.
-	int source_size;
+	unsigned int source_size;
 	SOCKET socket;              // socket.
 	pthread_t thread;           // thread courant.
 	
-	int hostnumber;                      // nombre d'hotes définis (a prendre en compte: si une machine envoie des données mais n'est pas repertoriée, elle sera ignorée.
-	char hosts[4]   [HOSTNUMBER_MAX];    // addresses IP des hotes répertoriés (0.0.0.0 -> pas d'hote).
-	long * idents   [HOSTNUMBER_MAX];    // identifiants utilisées par les hotes pour s'addresser au serveur (doit etre !=0).
-	float * volumes [HOSTNUMBER_MAX];    // volumes d'amplification des sons émis par les clients (utile pour le mute).
+	unsigned int hostnumber;           // nombre d'hotes définis (a prendre en compte: si une machine envoie des données mais n'est pas repertoriée, elle sera ignorée.
+	char hosts[4] [HOSTNUMBER_MAX];    // addresses IP des hotes répertoriés (0.0.0.0 -> pas d'hote).
+	long idents   [HOSTNUMBER_MAX];    // identifiants utilisées par les hotes pour s'addresser au serveur (doit etre !=0).
+	float volumes [HOSTNUMBER_MAX];    // volumes d'amplification des sons émis par les clients (utile pour le mute).
 	
-	char * recv_buffer;    // buffer de reception du socket.
-	long recv_buffer_size;
+	sound_packet * transit;
+	unsigned long transit_size;
 } server_data;
 
 
 /*
   thread du serveur: reception et emission des données.
 */
-int sound_server_main(void * params)
+void * sound_server_main(void * params)
 {
 	clock_t t1, t2, towait, t3, t4 = 0;
 	int n, i, j;
 	
 	server_data * server = (server_data*) params;
-	buffer = server->recv_buffer;
-	buffersize = server->recv_buffer_size;
-	long ident;
+	sound_packet * p = server->transit;
+	unsigned long psize = server->transit_size;
 	
 	set_nonblocking(server->socket);   // si aucun packet n'est arrivé, le programme continue sans attendre qu'il n'en arrive.
 	while (server->alive > 0)
 	{
 		t1 = clock();
-		n = recvfrom(server->socket, buffer, buffersize, 0, 0, 0);
-		if (n > 0)
+		n = recvfrom(server->socket, p, psize, 0, 0, 0);
+		if (n > 0 && p->ident != 0) // ident=0  =>  client offline
 		{
-			memcpy(&ident, buffer, sizeof(long));
 			for (i=0; i<HOSTNUMBER_MAX; i++)
-				if (server->idents[i] == ident && ident != 0)
+				if (server->idents[i] == p->ident)
 				{
-					memcpy(buffer+sizeof(long), server->soundbuffer,         server->sound_size);
-					memcpy(buffer+sizeof(long), server->hostsbuffers[ident], server->sound_size);
+					// add sound on global layer (soundbuffer)
+					for (j=0; j<SOUND_SIZE; j++)
+						server->soundbuffer[j] += ((float*)(p->sound))[j] - server->hostsbuffers[i][j];
+					// copy host's sound on host's layer
+					packet2sound(p, server->hostsbuffers[p->ident]);
 					server->clocks[i] = t1;
 					break;
 				}
@@ -73,11 +73,13 @@ int sound_server_main(void * params)
 				for (i=0; i<HOSTNUMBER_MAX; i++)
 					if (server->idents[i] != 0)
 					{
-						memcpy(buffer, server->idents+i, sizeof(long));
-						memcpy(buffer, server->soundbuffer[ident], server->sound_size);
-						for (j=sizeof(long); j<server->sound_size+sizeof(long); j++)
-							buffer[j] -= server->hostsbuffers[i][j];
-						n = sendto(server->socket, buffer, buffersize, 0, server->source, server->source_size);
+						p->ident = server->idents[i];
+						// copy global layer in packet
+						sound2packet(server->soundbuffer, p);
+						// remove from packet the host's layer
+						for (j=0; j<SOUND_SIZE; j++)
+							((float*)p->sound)[j] -= server->hostsbuffers[i][j];
+						n = sendto(server->socket, p, psize, 0, server->source, server->source_size);
 					}
 			t2 = clock();
 			towait = server->packetinterval - (t2-t1)/CLOCKS_PER_SEC * 1000; // esperons que t2-t1 soit > 0
@@ -99,7 +101,7 @@ int sound_server_main(void * params)
 inline char is_speaking(server_data * datas, int hostindex)
 {
 	if (hostindex == -1 || hostindex > HOSTNUMBER_MAX) return 1;
-	if (data->clocks[i] < clock() - SPEAK_TIMEOUT*CLOCK_PER_SEC)
+	if (datas->clocks[hostindex] < clock() - SPEAK_TIMEOUT*CLOCKS_PER_SEC)
 		return 1;
 	else return 0;
 }
@@ -113,16 +115,15 @@ inline char is_speaking(server_data * datas, int hostindex)
 */
 char add_host(server_data * server, char host[4], long ident)
 {
-	int number;
-	int i;
-	for (number=0; number<HOSTNUMBER_MAX; number++) if ((int)(server->hosts) == 0) break;
+	unsigned int number;
+	for (number=0; number<HOSTNUMBER_MAX; number++) if ((int)(server->hosts[number]) == 0) break;
 	if (number > HOSTNUMBER_MAX) return -1;
 	server->hosts[number][0] = host[0];
 	server->hosts[number][1] = host[1];
 	server->hosts[number][2] = host[2];
 	server->hosts[number][3] = host[3];
 	server->idents[number] = ident;
-	server->volumes = ident;
+	server->volumes[number] = 1.0;
 	if (server->hostsbuffers[number] == 0)  server->hostsbuffers[number] = malloc(SOUND_BUFFER_SIZE * sizeof(float));
 	server->hostnumber ++;
 	return number;
@@ -134,9 +135,12 @@ char add_host(server_data * server, char host[4], long ident)
 void del_host(server_data * server, int hostindex)
 {
 	free(server->hostsbuffers);
-	(int)(server->hosts[hostindex]) = 0;
+	server->hosts[hostindex][0] = 0;
+	server->hosts[hostindex][1] = 0;
+	server->hosts[hostindex][2] = 0;
+	server->hosts[hostindex][3] = 0;
 	server->idents[hostindex] = 0;
-	hostnumber --;
+	server->hostnumber --;
 }
 
 /*
@@ -169,7 +173,7 @@ server_data * start_server_thread(int port)
 		return 0;
 	}
 	SOCKADDR_IN source    = {0};
-	source.sin_addr.s_adr = hton(INADDR_ANY);
+	source.sin_addr.s_addr = htons(INADDR_ANY);
 	source.sin_family     = AF_INET;
 	source.sin_port       = htons(port);
 	if (bind(sock, (SOCKADDR*) &source, sizeof(source)) == SOCKET_ERROR)
@@ -178,24 +182,25 @@ server_data * start_server_thread(int port)
 		return 0;
 	}
 	server = malloc(sizeof(server_data));
-	server->soundbuffer  = malloc(SOUND_BUFFER_SIZE * sizeof(float));
+	server->transit      = malloc(sizeof(sound_packet));
+	server->transit_size = sizeof(sound_packet);
 	server->hostnumber   = 0;
 	server->alive        = 1;
 	server->socket       = sock;
 	server->source       = (SOCKADDR*) &source;
 	server->source_size  = sizeof(source);
-	server->packetspace  = 50;
+	server->packetinterval  = 50;
 	server_thread = pthread_create(&server_thread, 0, sound_server_main, &server);
 	server->thread = server_thread;
 	
-	return &server;
+	return server;
 }
 
 void stop_server(server_data * data)
 {
-	int i;
+	unsigned int i;
 	data->alive = 0;
-	pthread_join(data->thread);
+	pthread_join(data->thread, 0);
 	closesocket(data->socket);
 	for (i=0; i<data->hostnumber; i++)
 		free(data->hostsbuffers[i]);

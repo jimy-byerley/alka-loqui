@@ -47,95 +47,15 @@
 #endif
 
 
-
-void sleep_ms(int milliseconds) // cross-platform sleep function
-{
-#ifdef WIN32
-    Sleep(milliseconds);
-#elif _POSIX_C_SOURCE >= 199309L
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = milliseconds * 1000000;
-    nanosleep(&ts, NULL);
-#else
-    usleep(milliseconds * 1000);
-#endif
-}
-
+extern void sleep_ms(int milliseconds); // cross-platform sleep function
 
 /* uniquement pour windows, mais sera présent dans la boucle principale : init et end */
-static void network_init(void)
-{
-#ifdef WIN32
-    WSADATA wsa;
-    int err = WSAStartup(MAKEWORD(2, 2), &wsa);
-    if(err < 0)
-    {
-        puts("WSAStartup failed !");
-        exit(EXIT_FAILURE);
-    }
-#endif
-}
+extern void network_init(void);
+extern void network_end(void);
 
-static void network_end(void)
-{
-#ifdef WIN32
-    WSACleanup();
-#endif
-}
-
-
-int set_nonblocking(const int descriptor)
-{
-	#if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
-	
-	int nonBlocking = 1;
-	if ( fcntl( descriptor, F_SETFL, O_NONBLOCK, nonBlocking ) == -1 )
-	{
-		printf( "failed to set non-blocking socket\n" );
-		return -1;
-	}
-	
-	#elif PLATFORM == PLATFORM_WINDOWS
-	
-	DWORD nonBlocking = 1;
-	if ( ioctlsocket( descriptor, FIONBIO, &nonBlocking ) != 0 )
-	{
-		printf( "failed to set non-blocking socket\n" );
-		return -1;
-	}
-	
-	#endif
-	
-	/*
-	fcntl(descriptor, F_SETFL, O_NONBLOCK);
-	*/
-	/*
-	if (descriptor < 0) return -1;
-
-	char blocking = 0;
-	#ifdef WIN32
-		return (ioctlsocket(descriptor, FIONBIO, &blocking) == 0) ? 0 : -1;
-	#else
-		int flags = fcntl(descriptor, F_GETFL, 0);
-		if (flags < 0) return -1;
-		flags = blocking ? (flags&~O_NONBLOCK) : (flags|O_NONBLOCK);
-		return (fcntl(descriptor, F_SETFL, flags) == 0) ? 0 : -1;
-	#endif
-	*/
-	/*
-	// where socket descriptor is the socket you want to make non-blocking
-	int status = fcntl(descriptor, F_SETFL, fcntl(descriptor, F_GETFL, 0) | O_NONBLOCK);
-
-	if (status == -1)
-		perror("calling fcntl");
-	// handle the error.  By the way, I've never seen fcntl fail in this way
-	*/
-}
-
-int set_blocking(const int descriptor)
-{
-}
+/* methode simple pour parametrer qu'un socket devraa attendre le prochain packet si il n'en est pas en attente */
+extern int set_nonblocking(const int descriptor);
+extern int set_blocking(const int descriptor);
 
 
 #endif
