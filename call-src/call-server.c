@@ -50,9 +50,10 @@ void * sound_server_main(void * params)
 						n = sendto(server->socket, p, psize, 0, server->source, server->source_size);
 					}
 			t2 = clock();
-			towait = server->packetinterval - (t2-t1)/CLOCKS_PER_SEC * 1000; // esperons que t2-t1 soit > 0
+			towait = server->packetinterval - ((float)(t2-t1))/CLOCKS_PER_SEC * 1000; // esperons que t2-t1 soit > 0
 			if (towait > 0) sleep_ms(towait);  // la boucle ne doit pas se répeter trop souvent (ne pas bouffer l'UC).
 		}
+		else   sleep_ms(10); // prevent the server to take all the UC.
 	}
 	
 	pthread_exit(0);
@@ -92,7 +93,7 @@ char add_host(server_data * server, char host[4], long ident)
 	server->hosts[number][3] = host[3];
 	server->idents[number] = ident;
 	server->volumes[number] = 1.0;
-	if (server->hostsbuffers[number] == 0)  server->hostsbuffers[number] = malloc(SOUND_BUFFER_SIZE * sizeof(float));
+	if (server->hostsbuffers[number] == 0)  server->hostsbuffers[number] = malloc(SOUND_SIZE * sizeof(float));
 	server->hostnumber ++;
 	return number;
 }
@@ -157,8 +158,8 @@ server_data * start_server_thread(int port)
 	server->socket       = sock;
 	server->source       = (SOCKADDR*) &source;
 	server->source_size  = sizeof(source);
-	server->packetinterval  = 50;
-	server_thread = pthread_create(&server_thread, 0, sound_server_main, &server);
+	server->packetinterval  = 100;
+	server_thread = pthread_create(&server_thread, 0, sound_server_main, server);
 	server->thread = server_thread;
 	
 	return server;
@@ -170,8 +171,10 @@ void stop_server(server_data * data)
 	data->alive = 0;
 	pthread_join(data->thread, 0);
 	closesocket(data->socket);
-	for (i=0; i<data->hostnumber; i++)
-		free(data->hostsbuffers[i]);
+	for (i=0; i<HOSTNUMBER_MAX; i++)
+		if (data->hostsbuffers[i] != 0)
+			free(data->hostsbuffers[i]);
 	free(data->soundbuffer);
+	free(data->transit);
 	free(data);
 }
