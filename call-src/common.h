@@ -8,7 +8,7 @@
 #include <string.h>
 #include "errno.h"
 
-#define SOUND_SIZE  512
+#define SOUND_SIZE  256
 
 typedef struct {
 	float * recordbuffer;

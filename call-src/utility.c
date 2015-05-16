@@ -43,7 +43,7 @@ int set_nonblocking(const int descriptor)
 	int nonBlocking = 1;
 	if ( fcntl( descriptor, F_SETFL, O_NONBLOCK, nonBlocking ) == -1 )
 	{
-		printf( "failed to set non-blocking socket\n" );
+		printf("failed to set non-blocking socket\n");
 		return -1;
 	}
 	
@@ -52,7 +52,7 @@ int set_nonblocking(const int descriptor)
 	DWORD nonBlocking = 1;
 	if ( ioctlsocket( descriptor, FIONBIO, &nonBlocking ) != 0 )
 	{
-		printf( "failed to set non-blocking socket\n" );
+		printf("failed to set non-blocking socket\n");
 		return -1;
 	}
 	
@@ -67,7 +67,7 @@ int set_blocking(const int descriptor)
 	int nonBlocking = 0;
 	if ( fcntl( descriptor, F_SETFL, O_NONBLOCK, nonBlocking ) == -1 )
 	{
-		printf( "failed to set non-blocking socket\n" );
+		printf("failed to set blocking socket\n");
 		return -1;
 	}
 	
@@ -76,7 +76,7 @@ int set_blocking(const int descriptor)
 	DWORD nonBlocking = 0;
 	if ( ioctlsocket( descriptor, FIONBIO, &nonBlocking ) != 0 )
 	{
-		printf( "failed to set non-blocking socket\n" );
+		printf("failed to set blocking socket\n");
 		return -1;
 	}
 	

@@ -132,6 +132,7 @@ server_data * start_server_thread(int port)
 {
 	server_data * server;
 	SOCKET sock = 0;
+	SOCKADDR_IN source    = {0};
 	pthread_t server_thread;
 	
 	sock = socket(AF_INET, SOCK_DGRAM, 0); // crée un socket UDP
@@ -140,7 +141,6 @@ server_data * start_server_thread(int port)
 		perror("socket()");
 		return 0;
 	}
-	SOCKADDR_IN source    = {0};
 	source.sin_addr.s_addr = htons(INADDR_ANY);
 	source.sin_family     = AF_INET;
 	source.sin_port       = htons(port);
