@@ -1,3 +1,6 @@
+#ifndef CALL_SERVER_H
+#define CALL_SERVER_H
+
 #include "utility.h"
 #include "common.h"
 
@@ -7,7 +10,6 @@
    network_end()     a la fin du programme
 **/
 
-#define SOUND_BUFFER_SIZE 256
 #define HOSTNUMBER_MAX 30
 
 /*
@@ -33,7 +35,7 @@ typedef struct {
 	long idents   [HOSTNUMBER_MAX];    // identifiants utilisées par les hotes pour s'addresser au serveur (doit etre !=0).
 	float volumes [HOSTNUMBER_MAX];    // volumes d'amplification des sons émis par les clients (utile pour le mute).
 	
-	sound_packet * transit;
+	sound_packet * transit;            // structure packet de transit : buffer données reçues et envoyée.
 	unsigned long transit_size;
 } server_data;
 
@@ -83,3 +85,5 @@ server_data * start_server_thread(int port);
   Arrete le serveur designé par son bloc de données. la fonction attend que le thread se termine, ce qui est asser rapide
 */
 void stop_server(server_data * data);
+
+#endif
