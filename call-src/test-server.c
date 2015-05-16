@@ -20,6 +20,7 @@ int main()
 		{
 			sscanf(text, "%d.%d.%d.%d", addr, addr+1, addr+2, addr+3);
 			add_host(server, addr, ident++);
+			printf("+-- added %d.%d.%d.%d\n", addr[0], addr[1], addr[2], addr[3]);
 		}
 	}
 	return -1;

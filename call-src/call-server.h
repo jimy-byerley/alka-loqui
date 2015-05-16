@@ -31,7 +31,7 @@ typedef struct {
 	pthread_t thread;           // thread courant.
 	
 	unsigned int hostnumber;           // nombre d'hotes définis (a prendre en compte: si une machine envoie des données mais n'est pas repertoriée, elle sera ignorée.
-	char hosts[4] [HOSTNUMBER_MAX];    // addresses IP des hotes répertoriés (0.0.0.0 -> pas d'hote).
+	char hosts    [HOSTNUMBER_MAX][4]; // addresses IP des hotes répertoriés (0.0.0.0 -> pas d'hote).
 	long idents   [HOSTNUMBER_MAX];    // identifiants utilisées par les hotes pour s'addresser au serveur (doit etre !=0).
 	float volumes [HOSTNUMBER_MAX];    // volumes d'amplification des sons émis par les clients (utile pour le mute).
 	

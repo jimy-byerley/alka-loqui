@@ -85,12 +85,17 @@ inline char is_speaking(server_data * datas, int hostindex)
 char add_host(server_data * server, char host[4], long ident)
 {
 	unsigned int number;
-	for (number=0; number<HOSTNUMBER_MAX; number++) if ((int)(server->hosts[number]) == 0) break;
-	if (number > HOSTNUMBER_MAX) return -1;
+	for (number=0; number<HOSTNUMBER_MAX; number++) 
+		if (server->hosts[number][0] == 0 && 
+			server->hosts[number][1] == 0 &&
+			server->hosts[number][2] == 0 &&
+			server->hosts[number][3] == 0) break;
+	if (number >= HOSTNUMBER_MAX) return -1;
 	server->hosts[number][0] = host[0];
 	server->hosts[number][1] = host[1];
 	server->hosts[number][2] = host[2];
 	server->hosts[number][3] = host[3];
+	server->volumes[number] = 1.0;
 	server->idents[number] = ident;
 	server->volumes[number] = 1.0;
 	if (server->hostsbuffers[number] == 0)  server->hostsbuffers[number] = malloc(SOUND_SIZE * sizeof(float));
@@ -131,6 +136,7 @@ int get_hostindex(server_data * data, char host[4])
 */
 server_data * start_server_thread(int port)
 {
+	int i;
 	server_data * server;
 	SOCKET sock = 0;
 	SOCKADDR_IN source    = {0};
@@ -151,6 +157,15 @@ server_data * start_server_thread(int port)
 		return 0;
 	}
 	server = malloc(sizeof(server_data));
+	// il faut etre sur que les addresses et les idents seront a 0
+	for (i=0; i<HOSTNUMBER_MAX; i++)
+	{
+		server->hosts[i][0] = 0;
+		server->hosts[i][1] = 0;
+		server->hosts[i][2] = 0;
+		server->hosts[i][3] = 0;
+		server->idents[i] = 0;
+	}
 	server->transit      = malloc(sizeof(sound_packet));
 	server->transit_size = sizeof(sound_packet);
 	server->hostnumber   = 0;

@@ -23,6 +23,7 @@ typedef struct {
 	SOCKET socket;              // socket.
 	pthread_t thread;           // thread du client.
 	PaStream * stream;          // structure du flux capture portaudio.
+	stream_opts * stream_options;  // structure de parametres pour le callback de son.
 	
 	long hostident;             // identifiant du client sur le serveur: unique lors d'une connexion mais peut changer (décidé par le serveur).
 	sound_packet * transit;     // structure packet de transit : buffer données reçues et envoyée.

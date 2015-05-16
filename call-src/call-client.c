@@ -32,9 +32,7 @@ void * sound_client_main(void * params)
 		n = sendto(client->socket, p, psize, 0, client->destination, client->destination_size);
 		t2 = clock();
 		towait = client->packetinterval - (t2-t1);
-	printf("%d\n", towait);
 		if (towait > 0) sleep_ms(towait);
-	printf("ok\n");
 	}
 	
 	pthread_exit(0);
@@ -79,7 +77,7 @@ client_data * start_client_thread(char * straddr, int port, long ident)
 	err = Pa_OpenDefaultStream( 
 		&stream,
 		1,               /* input channel */
-		0,               /* stero input */
+		1,               /* output channel */
 		paFloat32,       /* 32 bit float */
 		7100,            /* taux d'echantillonnage : 14400 */
 		SOUND_SIZE,      /* echantillons par buffer, utiliser paFramesPerBufferUnspecified pour laisser pa choisir le meilleur */
@@ -104,6 +102,7 @@ client_data * start_client_thread(char * straddr, int port, long ident)
 	client->transit_size     = sizeof(sound_packet);
 	client->packetinterval   = 50;
 	client->stream           = stream;
+	client->stream_options   = soundopts;
 	client_thread = pthread_create(&client_thread, 0, sound_client_main, client);
 	client->thread = client_thread;
 	
@@ -136,6 +135,7 @@ char stop_client(client_data * data)
 	free(data->recordbuffer);
 	free(data->playbuffer);
 	free(data->transit);
+	free(data->stream_options);
 	free(data);
 	return 1;
 }
