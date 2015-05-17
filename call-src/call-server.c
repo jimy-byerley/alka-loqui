@@ -11,7 +11,7 @@
 */
 void * sound_server_main(void * params)
 {
-	clock_t t1, t2, towait, t3, t4 = 0;
+	clock_t t1, t2, towait, t3 = 0;
 	int n, i, j;
 	
 	server_data * server = (server_data*) params;
@@ -22,38 +22,40 @@ void * sound_server_main(void * params)
 	while (server->alive > 0)
 	{
 		t1 = clock();
-		n = recvfrom(server->socket, p, psize, 0, 0, 0);
-		if (n > 0 && p->ident != 0) // ident=0  =>  client offline
+		n = recvfrom(server->socket, p, psize, 0, (SOCKADDR*)server->source, &(server->source_size));
+		if (n > 0)
 		{
 			for (i=0; i<HOSTNUMBER_MAX; i++)
-				if (server->idents[i] == p->ident)
+				if (server->hosts[i] != 0)
 				{
 					// add sound on global layer (soundbuffer)
 					for (j=0; j<SOUND_SIZE; j++)
 						server->soundbuffer[j] += ((float*)(p->sound))[j] - server->hostsbuffers[i][j];
 					// copy host's sound on host's layer
-					packet2sound(p, server->hostsbuffers[p->ident]);
+					packet2sound(p, server->hostsbuffers[i]);
 					server->clocks[i] = t1;
 					break;
 				}
-			t4 = clock();
-			if (t4-t3 > server->sendinterval)
+			t3= clock();
+			if (t3-t1 > server->sendinterval)
 				for (i=0; i<HOSTNUMBER_MAX; i++)
-					if (server->idents[i] != 0)
+					if (server->hosts[i] != 0)
 					{
-						p->ident = server->idents[i];
 						// copy global layer in packet
 						sound2packet(server->soundbuffer, p);
 						// remove from packet the host's layer
 						for (j=0; j<SOUND_SIZE; j++)
-							((float*)p->sound)[j] -= server->hostsbuffers[i][j];
-						n = sendto(server->socket, p, psize, 0, server->source, server->source_size);
+							p->sound[j] -= server->hostsbuffers[i][j];
+						printf("%s", (char*)p->sound);
+						fflush(stdout);
+						n = sendto(server->socket, p, psize, 0, (SOCKADDR*)server->source, server->source_size);
+						if (n == -1) perror("sound_server_main(): sendto");
 					}
 			t2 = clock();
 			towait = server->packetinterval - ((float)(t2-t1))/CLOCKS_PER_SEC * 1000; // esperons que t2-t1 soit > 0
 			if (towait > 0) sleep_ms(towait);  // la boucle ne doit pas se répeter trop souvent (ne pas bouffer l'UC).
 		}
-		else   sleep_ms(10); // prevent the server to take all the UC.
+		else   sleep_ms(1); // prevent the server to take all the UC.
 	}
 	
 	pthread_exit(0);
@@ -82,21 +84,13 @@ inline char is_speaking(server_data * datas, int hostindex)
   datas est un pointeur vers la structure de données du serveur.
   Retourne l'indice de l'hote.
 */
-char add_host(server_data * server, char host[4], long ident)
+char add_host(server_data * server, SOCKADDR_IN * host)
 {
 	unsigned int number;
-	for (number=0; number<HOSTNUMBER_MAX; number++) 
-		if (server->hosts[number][0] == 0 && 
-			server->hosts[number][1] == 0 &&
-			server->hosts[number][2] == 0 &&
-			server->hosts[number][3] == 0) break;
+	for (number=0; number<HOSTNUMBER_MAX; number++)
+		if (server->hosts[number] == 0) break;
 	if (number >= HOSTNUMBER_MAX) return -1;
-	server->hosts[number][0] = host[0];
-	server->hosts[number][1] = host[1];
-	server->hosts[number][2] = host[2];
-	server->hosts[number][3] = host[3];
-	server->volumes[number] = 1.0;
-	server->idents[number] = ident;
+	server->hosts[number] = host;
 	server->volumes[number] = 1.0;
 	if (server->hostsbuffers[number] == 0)  server->hostsbuffers[number] = malloc(SOUND_SIZE * sizeof(float));
 	server->hostnumber ++;
@@ -108,23 +102,21 @@ char add_host(server_data * server, char host[4], long ident)
 */
 void del_host(server_data * server, int hostindex)
 {
-	free(server->hostsbuffers);
-	server->hosts[hostindex][0] = 0;
-	server->hosts[hostindex][1] = 0;
-	server->hosts[hostindex][2] = 0;
-	server->hosts[hostindex][3] = 0;
-	server->idents[hostindex] = 0;
+	free(server->hostsbuffers[hostindex]);
+	server->hostsbuffers[hostindex] = 0;
+	free(server->hosts[hostindex]);
+	server->hosts[hostindex] = 0;
 	server->hostnumber --;
 }
 
 /*
   Retourne l'indice d'un hote désigné par son ip (4 octets), dans la structure de données du serveur.
 */
-int get_hostindex(server_data * data, char host[4])
+int get_hostindex(const server_data * data, const SOCKADDR_IN * host)
 {
 	int i = 0;
 	for (i; i<HOSTNUMBER_MAX; i++)
-		if ((int)(data->hosts[i]) == (int)host)
+		if (data->hosts[i] == host || memcmp(data->hosts[i], host, sizeof(SOCKADDR_IN)) == 0)
 			return i;
 	return -1;
 }
@@ -136,10 +128,9 @@ int get_hostindex(server_data * data, char host[4])
 */
 server_data * start_server_thread(int port)
 {
-	int i;
 	server_data * server;
 	SOCKET sock = 0;
-	SOCKADDR_IN source    = {0};
+	SOCKADDR_IN local;
 	pthread_t server_thread;
 	
 	sock = socket(AF_INET, SOCK_DGRAM, 0); // crée un socket UDP
@@ -148,32 +139,31 @@ server_data * start_server_thread(int port)
 		perror("socket()");
 		return 0;
 	}
-	source.sin_addr.s_addr = htons(INADDR_ANY);
-	source.sin_family     = AF_INET;
-	source.sin_port       = htons(port);
-	if (bind(sock, (SOCKADDR*) &source, sizeof(source)) == SOCKET_ERROR)
+	
+	local.sin_addr.s_addr = inet_addr("127.0.0.1"); //htons(INADDR_ANY);
+	local.sin_family      = AF_INET;
+	local.sin_port        = htons(port);
+	if (bind(sock, (SOCKADDR*) &local, sizeof(SOCKADDR_IN)) == SOCKET_ERROR)
 	{
 		perror("bind()");
 		return 0;
 	}
+	
 	server = malloc(sizeof(server_data));
-	// il faut etre sur que les addresses et les idents seront a 0
-	for (i=0; i<HOSTNUMBER_MAX; i++)
-	{
-		server->hosts[i][0] = 0;
-		server->hosts[i][1] = 0;
-		server->hosts[i][2] = 0;
-		server->hosts[i][3] = 0;
-		server->idents[i] = 0;
-	}
+	// tableaux de pointeurs (alloués a la connexion des clients : 0 <=> espace non alloué).
+	memset(server->hosts, 0, HOSTNUMBER_MAX*sizeof(void*));
+	memset(server->hostsbuffers, 0, HOSTNUMBER_MAX*sizeof(void*));
+	// remplissage de la structure des données du serveur.
+	server->soundbuffer  = malloc(sizeof(float)*SOUND_SIZE);
 	server->transit      = malloc(sizeof(sound_packet));
 	server->transit_size = sizeof(sound_packet);
 	server->hostnumber   = 0;
 	server->alive        = 1;
 	server->socket       = sock;
-	server->source       = (SOCKADDR*) &source;
-	server->source_size  = sizeof(source);
-	server->packetinterval  = 100;
+	server->source       = malloc(sizeof(SOCKADDR_IN));
+	server->source_size  = sizeof(SOCKADDR_IN);
+	server->packetinterval  = 10;
+	server->sendinterval    = 20;
 	server_thread = pthread_create(&server_thread, 0, sound_server_main, server);
 	server->thread = server_thread;
 	
@@ -186,9 +176,12 @@ void stop_server(server_data * data)
 	data->alive = 0;
 	pthread_join(data->thread, 0);
 	closesocket(data->socket);
+	free(data->source);
 	for (i=0; i<HOSTNUMBER_MAX; i++)
-		if (data->hostsbuffers[i] != 0)
-			free(data->hostsbuffers[i]);
+	{
+		if (data->hostsbuffers[i] != 0)     free(data->hostsbuffers[i]);
+		if (data->hosts[i] != 0)            free(data->hosts[i]);
+	}
 	free(data->soundbuffer);
 	free(data->transit);
 	free(data);

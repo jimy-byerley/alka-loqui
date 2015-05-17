@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "portaudio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "errno.h"
@@ -57,5 +56,11 @@ extern void network_end(void);
 extern int set_nonblocking(const int descriptor);
 extern int set_blocking(const int descriptor);
 
+/*
+  Configure une addresse de socket C a partir d'une IP (v4 ou v*6) en str et d'un uméro de port.
+  L'adresse retournée est a liberée après usage (free())
+  Si il est impossible de créer l'addresse (mauvais format d'addresse), 0 est retourné.
+*/
+SOCKADDR_IN * c_sockaddr(const char * straddr, const int port);
 
 #endif

@@ -20,23 +20,22 @@
 typedef struct {
 	float * soundbuffer;                    // buffer des sons cumulés de tous les clients.
 	float * hostsbuffers [HOSTNUMBER_MAX];  // buffers des sons émis par tous les clients.
-	unsigned char * clocks;                 // dates des dernières émissions des clients.
+	unsigned char clocks [HOSTNUMBER_MAX];  // dates des dernières émissions des clients.
 	unsigned char alive;                    // drapeau 'doit fonctionner' pour le serveur, mettre à 0 pour qu'il s'arrete.
 	unsigned int packetinterval;            // interval de temps (ms) entre chaque reception de packet.
 	unsigned int sendinterval;              // interval de temps (ms) entre chaque emission aux clients.
 	
-	SOCKADDR * source;          // addresse du serveur.
-	unsigned int source_size;
 	SOCKET socket;              // socket.
 	pthread_t thread;           // thread courant.
 	
-	unsigned int hostnumber;           // nombre d'hotes définis (a prendre en compte: si une machine envoie des données mais n'est pas repertoriée, elle sera ignorée.
-	char hosts    [HOSTNUMBER_MAX][4]; // addresses IP des hotes répertoriés (0.0.0.0 -> pas d'hote).
-	long idents   [HOSTNUMBER_MAX];    // identifiants utilisées par les hotes pour s'addresser au serveur (doit etre !=0).
-	float volumes [HOSTNUMBER_MAX];    // volumes d'amplification des sons émis par les clients (utile pour le mute).
+	unsigned int hostnumber;             // nombre d'hotes définis (a prendre en compte: si une machine envoie des données mais n'est pas repertoriée, elle sera ignorée.
+	SOCKADDR_IN * hosts[HOSTNUMBER_MAX]; // addresses IP des hotes répertoriés (0.0.0.0 -> pas d'hote).
+	float volumes [HOSTNUMBER_MAX];      // volumes d'amplification des sons émis par les clients (utile pour le mute).
 	
-	sound_packet * transit;            // structure packet de transit : buffer données reçues et envoyée.
+	sound_packet * transit;              // structure packet de transit : buffer données reçues et envoyée.
 	unsigned long transit_size;
+	SOCKADDR_IN * source;                // addresse de l'emetteur du packet en transit
+	unsigned int source_size;
 } server_data;
 
 
@@ -62,17 +61,17 @@ inline char is_speaking(server_data * datas, int hostindex);
   datas est un pointeur vers la structure de données du serveur.
   Retourne l'indice de l'hote.
 */
-char add_host(server_data * server, char host[4], long ident);
+char add_host(server_data * server, SOCKADDR_IN * host);
 
 /*
   enleve un hote de la liste des hotes, est utile pour liberer de la place, quand l'hote s'est déconnecté.
 */
-void del_host(server_data * server, int hostindex);
+void del_host(server_data * server, const int hostindex);
 
 /*
   Retourne l'indice d'un hote désigné par son ip (4 octets), dans la structure de données du serveur.
 */
-int get_hostindex(server_data * data, char host[4]);
+int get_hostindex(const server_data * data, const SOCKADDR_IN * host);
 
 /*
   Lance le serveur dans un thread_séparé.

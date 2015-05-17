@@ -83,3 +83,21 @@ int set_blocking(const int descriptor)
 	#endif
 	return 0;
 }
+
+/*
+  Configure une addresse de socket C a partir d'une IP (v4 ou v6) en str et d'un uméro de port.
+  L'adresse retournée est a liberée après usage (free())
+*/
+SOCKADDR_IN * c_sockaddr(const char * straddr, const int port)
+{
+	in_addr_t s_addr;
+	SOCKADDR_IN * address;
+	
+	s_addr = inet_addr(straddr);
+	if (s_addr == INADDR_NONE)  return 0;
+	address = malloc(sizeof(SOCKADDR_IN));
+	address->sin_addr.s_addr = s_addr;
+	address->sin_family      = AF_INET;
+	address->sin_port        = htons(port);
+	return address;
+}

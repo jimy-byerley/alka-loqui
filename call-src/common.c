@@ -6,6 +6,8 @@ int stream_callback( const void *input, void *output,
 					 PaStreamCallbackFlags statusFlags,
 					 void * userData)
 {
+	(void)timeInfo;   // delete warning
+	(void)statusFlags;
 	float *in  = (float*)input;
 	float *out = (float*)output;
 	unsigned int i;
@@ -35,3 +37,4 @@ inline void sound2packet(float * buffer, sound_packet * packet)
 {
 	memcpy(packet->sound, buffer, SOUND_SIZE*sizeof(float));
 }
+

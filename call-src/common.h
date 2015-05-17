@@ -29,9 +29,7 @@ typedef struct {
 	/*
 	  structure rassemblant toutes les données d'un packet (la taille max du total ne doit pas exceder 65507 octets)
 	*/
-	char packet_number;
-	long ident;
-	char sound[SOUND_SIZE*sizeof(float)];
+	float sound[SOUND_SIZE];
 } sound_packet;
 
 

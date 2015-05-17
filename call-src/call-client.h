@@ -25,7 +25,6 @@ typedef struct {
 	PaStream * stream;          // structure du flux capture portaudio.
 	stream_opts * stream_options;  // structure de parametres pour le callback de son.
 	
-	long hostident;             // identifiant du client sur le serveur: unique lors d'une connexion mais peut changer (décidé par le serveur).
 	sound_packet * transit;     // structure packet de transit : buffer données reçues et envoyée.
 	unsigned long transit_size;
 } client_data;
@@ -37,11 +36,10 @@ typedef struct {
 void * sound_client_main(void * params);
 
 /*
-  Lance le thread client qui se connectera à l'addresse ip passée en chaine lisible, on doit spécifier le port
-  de connexion et l'identifiant du client dans l'échange client/serveur.
-  Retourne 1 si le client a été lancé avec succès, 0 sinon.
-*/
-client_data * start_client_thread(char * straddr, int port, long ident);
+ L ance le thread client en utisant l'addresse serveur donnée.                *
+ Retourne 1 si le client a été lancé avec succès, 0 sinon.
+ */
+client_data * start_client_thread(SOCKADDR_IN * address);
 
 /*
   Arrete le client déja lancé. retourne 1 si l'arret est réussi, 0 sinon.

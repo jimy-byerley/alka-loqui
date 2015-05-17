@@ -22,16 +22,18 @@ void * sound_client_main(void * params)
 	while (client->alive > 0)
 	{
 		t1 = clock();
-		n = recvfrom(client->socket, client->transit, client->transit_size, 0, 0, 0);
+		n = recv(client->socket, client->transit, client->transit_size, 0);
 		if (n > 0)
 		{
+			printf("%s", (char*)p->sound);
+			fflush(stdout);
 			packet2sound(p, client->playbuffer);
 		}
-		p->ident = client->hostident;
 		sound2packet(client->recordbuffer, p);
 		n = sendto(client->socket, p, psize, 0, client->destination, client->destination_size);
+		if (n == -1) perror("sound_client_main(): sendto()");
 		t2 = clock();
-		towait = client->packetinterval - (t2-t1);
+		towait = client->packetinterval - ((float)(t2-t1))/CLOCKS_PER_SEC * 1000;
 		if (towait > 0) sleep_ms(towait);
 	}
 	
@@ -40,16 +42,14 @@ void * sound_client_main(void * params)
 }
 
 /*
-  Lance le thread client qui se connectera à l'addresse ip passée en chaine lisible, on doit spécifier le port
-  de connexion et l'identifiant du client dans l'échange client/serveur.
+  Lance le thread client en utisant l'addresse serveur donnée.
   Retourne 1 si le client a été lancé avec succès, 0 sinon.
 */
-client_data * start_client_thread(char * straddr, int port, long ident)
+client_data * start_client_thread(SOCKADDR_IN * address)
 {
 	client_data * client;
 	stream_opts * soundopts;
 	SOCKET sock = 0;
-	SOCKADDR_IN destination = {0};
 	PaStream * stream;
 	PaError err;
 	pthread_t client_thread;
@@ -61,9 +61,6 @@ client_data * start_client_thread(char * straddr, int port, long ident)
 		perror("socket()");
 		return 0;
 	}
-	destination.sin_addr.s_addr  = inet_addr(straddr);
-	destination.sin_port         = htons(port);
-	destination.sin_family       = AF_INET;
 	
 	/** start Portaudio and stream callback **/
 	soundopts = malloc(sizeof(stream_opts));
@@ -92,15 +89,14 @@ client_data * start_client_thread(char * straddr, int port, long ident)
 	/** launch thread **/
 	client = malloc(sizeof(client_data));
 	client->alive            = 1;
-	client->destination      = (SOCKADDR*) &destination;
-	client->destination_size = sizeof(SOCKADDR_IN);
+	client->destination      = (SOCKADDR*) address;
+	client->destination_size = sizeof(SOCKADDR);
 	client->socket           = sock;
 	client->recordbuffer     = soundopts->recordbuffer;
 	client->playbuffer       = soundopts->playbuffer;
-	client->hostident        = ident;
 	client->transit          = malloc(sizeof(sound_packet));
 	client->transit_size     = sizeof(sound_packet);
-	client->packetinterval   = 50;
+	client->packetinterval   = 10;
 	client->stream           = stream;
 	client->stream_options   = soundopts;
 	client_thread = pthread_create(&client_thread, 0, sound_client_main, client);
@@ -132,6 +128,7 @@ char stop_client(client_data * data)
 	data->alive = 0;
 	pthread_join(data->thread, 0);
 	closesocket(data->socket);
+	free(data->destination);
 	free(data->recordbuffer);
 	free(data->playbuffer);
 	free(data->transit);
