@@ -87,20 +87,29 @@ bool execCommand(QString text, Host user, QTcpSocket *socket)
               }
               else if(commande=="pseudo")
                {
-                  if(cGuest[nUser].lvl==-1)
+                  if(cGuest[nUser].lvl==-1) //&& banPseudo(text))
                   {
+
                      if(user.lvl!=-1)
                      {
-                        cGuest[Pseudo2Num(user.pseudo)].pseudo=text;
-                        sentAll(user.pseudo+" c'est renommé en "+text);
+                         time_t temps = time(NULL);
+                         if(((int)difftime(temps,cGuest[Pseudo2Num(user.pseudo)].delayPseudo)%60)>300)
+                         {
+                             cGuest[Pseudo2Num(user.pseudo)].pseudo=text;
+                             sentAll(user.pseudo+" c'est renommé en "+text);
+                             cGuest[Pseudo2Num(user.pseudo)].delayPseudo=temps;
+                         }
+                         else
+                             sentOne("vous devez patientée 5 mins",user);
                      }
                      else
                         sentAll(newClient(text,1,socket));
+
                      return false;
                   }
                   else
                   {
-                      sentOne("Pseudo indisponible",user);
+                      sentOne("Pseudo indisponible ou bannis",user);
                       return false;
                   }
                }
@@ -276,7 +285,9 @@ QString unban(QString user)
         }
         if(pseudo==user)
         {
-            in<<in.readAll().remove(c,c+line.size()-1);
+            QString t=blackList.readAll();
+            blackList.resize(0);
+            in<<t;
             return pseudo+" a ete unban";
         }
         c++;
@@ -293,10 +304,11 @@ QString ban(Host user)
         return"erreur lors de l'ouverture de la blacklist";
     }
     QTextStream out(&blackList);
-    out<<blackList.readAll();
+    //out<<out.readAll();
     out<<user.pseudo+" \n";
     //out<<user.socket->localAddress().toString()+"\n";
     sentAll("<serveur>"+user.pseudo+" a ete bannis");
+    user.socket->deleteLater();
     cGuest.removeOne(user);
     return "pour debannir "+user.pseudo+" utilise la fonction unban";
 }

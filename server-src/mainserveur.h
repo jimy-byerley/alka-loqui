@@ -40,6 +40,7 @@ private:
 };
 
 bool blackListIp(QTcpSocket *a);
+bool banPseudo(QString user);
 bool operator==(nCo a,nCo b);
 void sentAll(QString text);
 void sentOne(QString text, Host user);

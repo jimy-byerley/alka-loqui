@@ -10,6 +10,7 @@ typedef struct
     char lvl;
     QTcpSocket *socket;
     quint16 tailleMessage;
+    time_t delayPseudo;
 
 }Host;
 extern QList<Host> cGuest;

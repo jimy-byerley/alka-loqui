@@ -1,4 +1,6 @@
 #include "client.h"
+#include <iostream>
+#include <ctime>
 
 QList<Host> cGuest;
 
@@ -17,6 +19,7 @@ QString newClient(QString pseudo, const char lvl, QTcpSocket *newGuest)
     nClient.pseudo=pseudo;
     nClient.socket=newGuest;
     nClient.tailleMessage=0;
+    nClient.delayPseudo=time(NULL);
     cGuest.append(nClient);
     return "<strong>"+pseudo+" nous a rejoind</strong>";
 }

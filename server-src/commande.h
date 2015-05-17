@@ -16,6 +16,7 @@ bool execCommand(QString text, Host user, QTcpSocket *socket); //condition:'/' p
 bool execCommandServ(QString text);
 bool pseudoExistantServ(Host user);
 QString ban(Host user);
+QString banPseudo(Host user);
 QString unban(QString user);
 void kick(Host user);
 bool pseudoExistant(Host user, Host requet);
