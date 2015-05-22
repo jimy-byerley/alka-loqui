@@ -38,7 +38,7 @@ void network_end(void)
 
 int set_nonblocking(const int descriptor)
 {
-	#if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
+	#ifdef PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
 	
 	int nonBlocking = 1;
 	if ( fcntl( descriptor, F_SETFL, O_NONBLOCK, nonBlocking ) == -1 )
@@ -62,7 +62,7 @@ int set_nonblocking(const int descriptor)
 
 int set_blocking(const int descriptor)
 {
-	#if PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
+	#ifdef PLATFORM == PLATFORM_MAC || PLATFORM == PLATFORM_UNIX
 	
 	int nonBlocking = 0;
 	if ( fcntl( descriptor, F_SETFL, O_NONBLOCK, nonBlocking ) == -1 )
